@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Square, SquareDashed, Link } from "lucide-react";
 import { useDiagramStore } from "@/store/diagramStore";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
