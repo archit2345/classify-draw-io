@@ -28,7 +28,7 @@ export interface DiagramElement {
 
 export interface Relationship {
   id: string;
-  type: "inheritance" | "implementation";
+  type: string;
   sourceId: string;
   targetId: string;
 }
@@ -38,4 +38,6 @@ export interface DiagramState {
   relationships: Relationship[];
   selectedElementId: string | null;
   selectedRelationshipId: string | null;
+  connectionMode: string | null;
+  tempSourceId: string | null;
 }

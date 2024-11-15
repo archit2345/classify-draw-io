@@ -10,6 +10,9 @@ interface DiagramStore extends DiagramState {
   removeRelationship: (id: string) => void;
   setSelectedElement: (id: string | null) => void;
   setSelectedRelationship: (id: string | null) => void;
+  setConnectionMode: (mode: string | null) => void;
+  setTempSourceId: (id: string | null) => void;
+  resetConnections: (elementId: string) => void;
 }
 
 export const useDiagramStore = create<DiagramStore>((set) => ({
@@ -17,6 +20,8 @@ export const useDiagramStore = create<DiagramStore>((set) => ({
   relationships: [],
   selectedElementId: null,
   selectedRelationshipId: null,
+  connectionMode: null,
+  tempSourceId: null,
 
   addElement: (element) =>
     set((state) => ({
@@ -53,4 +58,17 @@ export const useDiagramStore = create<DiagramStore>((set) => ({
 
   setSelectedRelationship: (id) =>
     set({ selectedRelationshipId: id, selectedElementId: null }),
+
+  setConnectionMode: (mode) =>
+    set({ connectionMode: mode, tempSourceId: null }),
+
+  setTempSourceId: (id) =>
+    set({ tempSourceId: id }),
+
+  resetConnections: (elementId) =>
+    set((state) => ({
+      relationships: state.relationships.filter(
+        (rel) => rel.sourceId !== elementId && rel.targetId !== elementId
+      ),
+    })),
 }));
