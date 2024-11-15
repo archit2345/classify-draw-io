@@ -19,6 +19,19 @@ export default {
     },
     extend: {
       colors: {
+        canvas: {
+          bg: "#f8fafc",
+          grid: "#e2e8f0",
+        },
+        element: {
+          border: "#64748b",
+          bg: "#ffffff",
+          selected: "#3b82f6",
+        },
+        relationship: {
+          line: "#64748b",
+          arrow: "#475569",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -53,24 +66,14 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
       },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
       keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+        "element-appear": {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "element-appear": "element-appear 0.2s ease-out",
       },
     },
   },
