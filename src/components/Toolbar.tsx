@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Square, SquareDashed, ArrowRight, GitFork } from "lucide-react";
+import { Square, SquareDashed } from "lucide-react";
 import { useDiagramStore } from "@/store/diagramStore";
+import { toast } from "sonner";
 
 export const Toolbar = () => {
   const addElement = useDiagramStore((state) => state.addElement);
@@ -14,6 +15,7 @@ export const Toolbar = () => {
       methods: [],
       attributes: [],
     });
+    toast.success("Class added successfully");
   };
 
   const handleAddInterface = () => {
@@ -25,10 +27,11 @@ export const Toolbar = () => {
       methods: [],
       attributes: [],
     });
+    toast.success("Interface added successfully");
   };
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg p-2 flex gap-2">
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg p-2 flex gap-2 z-10">
       <Button
         variant="outline"
         size="icon"
@@ -44,13 +47,6 @@ export const Toolbar = () => {
         className="hover:bg-slate-100"
       >
         <SquareDashed className="h-4 w-4" />
-      </Button>
-      <div className="w-px bg-slate-200" />
-      <Button variant="outline" size="icon" className="hover:bg-slate-100">
-        <ArrowRight className="h-4 w-4" />
-      </Button>
-      <Button variant="outline" size="icon" className="hover:bg-slate-100">
-        <GitFork className="h-4 w-4" />
       </Button>
     </div>
   );
