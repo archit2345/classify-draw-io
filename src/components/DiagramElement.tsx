@@ -1,12 +1,12 @@
 import { DiagramElement as DiagramElementType } from "@/types/diagram";
 import { useDiagramStore } from "@/store/diagramStore";
 import { cn } from "@/lib/utils";
-import { GripVertical, X, Link2, Plus } from "lucide-react";
-import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Input } from "./ui/input";
 import { nanoid } from "nanoid";
+import { ElementHeader } from "./diagram/ElementHeader";
+import { ElementAttributes } from "./diagram/ElementAttributes";
+import { ElementMethods } from "./diagram/ElementMethods";
 
 interface Props {
   element: DiagramElementType;
@@ -67,7 +67,14 @@ export const DiagramElement = ({ element }: Props) => {
       return;
     }
     updateElement(element.id, {
-      attributes: [...element.attributes, { id: nanoid(), visibility: visibility === "+" ? "public" : visibility === "-" ? "private" : "protected", name, type }]
+      attributes: [...element.attributes, { 
+        id: nanoid(), 
+        visibility: visibility === "+" ? "public" : 
+                   visibility === "-" ? "private" : 
+                   visibility === "*" ? "static" : "protected", 
+        name, 
+        type 
+      }]
     });
     setNewAttribute("");
   };
@@ -80,7 +87,15 @@ export const DiagramElement = ({ element }: Props) => {
       return;
     }
     updateElement(element.id, {
-      methods: [...element.methods, { id: nanoid(), visibility: visibility === "+" ? "public" : visibility === "-" ? "private" : "protected", name, returnType, parameters: "" }]
+      methods: [...element.methods, { 
+        id: nanoid(), 
+        visibility: visibility === "+" ? "public" : 
+                   visibility === "-" ? "private" : 
+                   visibility === "*" ? "static" : "protected", 
+        name, 
+        returnType, 
+        parameters: "" 
+      }]
     });
     setNewMethod("");
   };
@@ -98,117 +113,34 @@ export const DiagramElement = ({ element }: Props) => {
       draggable
       onDragStart={handleDragStart}
     >
-      <div className="p-2 border-b border-slate-200 font-medium flex items-center justify-between">
-        <GripVertical className="h-4 w-4 text-slate-400 cursor-grab" />
-        <div className="flex-1 text-center" onDoubleClick={() => setIsEditing(true)}>
-          {element.type === "interface" && (
-            <div className="text-xs text-slate-500">«interface»</div>
-          )}
-          {isEditing ? (
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onBlur={handleNameSubmit}
-              onKeyDown={(e) => e.key === "Enter" && handleNameSubmit()}
-              autoFocus
-            />
-          ) : (
-            element.name
-          )}
-        </div>
-        <div className="flex gap-1">
-          {connectionMode && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={handleConnect}
-              >
-                <Link2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={handleResetConnections}
-              >
-                <X className="h-4 w-4 text-red-500" />
-              </Button>
-            </>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => removeElement(element.id)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <ElementHeader
+        element={element}
+        isEditing={isEditing}
+        newName={newName}
+        setIsEditing={setIsEditing}
+        setNewName={setNewName}
+        handleNameSubmit={handleNameSubmit}
+        handleConnect={handleConnect}
+        handleResetConnections={handleResetConnections}
+        removeElement={removeElement}
+        connectionMode={connectionMode}
+      />
       
       {element.type === "class" && (
-        <div className="p-2 border-b border-slate-200">
-          <div className="flex items-center gap-2 mb-2">
-            <Input
-              placeholder="+ attributeName type"
-              value={newAttribute}
-              onChange={(e) => setNewAttribute(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddAttribute()}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleAddAttribute}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          {element.attributes.map((attr) => (
-            <div key={attr.id} className="text-sm">
-              {attr.visibility === "private" && "-"}
-              {attr.visibility === "public" && "+"}
-              {attr.visibility === "protected" && "#"}
-              {attr.name}: {attr.type}
-            </div>
-          ))}
-        </div>
+        <ElementAttributes
+          element={element}
+          newAttribute={newAttribute}
+          setNewAttribute={setNewAttribute}
+          handleAddAttribute={handleAddAttribute}
+        />
       )}
 
-      <div className="p-2">
-        <div className="flex items-center gap-2 mb-2">
-          <Input
-            placeholder="+ methodName returnType"
-            value={newMethod}
-            onChange={(e) => setNewMethod(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAddMethod()}
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={handleAddMethod}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-        {element.methods.map((method) => (
-          <div
-            key={method.id}
-            className={cn(
-              "text-sm",
-              method.isAbstract && "italic"
-            )}
-          >
-            {method.visibility === "private" && "-"}
-            {method.visibility === "public" && "+"}
-            {method.visibility === "protected" && "#"}
-            {method.name}({method.parameters}): {method.returnType}
-          </div>
-        ))}
-      </div>
+      <ElementMethods
+        element={element}
+        newMethod={newMethod}
+        setNewMethod={setNewMethod}
+        handleAddMethod={handleAddMethod}
+      />
     </div>
   );
 };

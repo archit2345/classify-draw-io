@@ -6,8 +6,27 @@ export const Canvas = () => {
   const elements = useDiagramStore((state) => state.elements);
   const relationships = useDiagramStore((state) => state.relationships);
   const connectionMode = useDiagramStore((state) => state.connectionMode);
+  const updateElement = useDiagramStore((state) => state.updateElement);
 
-  // Draw relationships using SVG
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const elementId = e.dataTransfer.getData("text/plain");
+    const element = elements.find(el => el.id === elementId);
+    
+    if (element) {
+      // Get the drop coordinates relative to the canvas
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      updateElement(elementId, { x, y });
+    }
+  };
+
   const renderRelationships = () => {
     return relationships.map((rel) => {
       const source = elements.find((el) => el.id === rel.sourceId);
@@ -74,7 +93,11 @@ export const Canvas = () => {
   };
 
   return (
-    <div className="w-full h-screen bg-canvas-bg relative overflow-hidden">
+    <div 
+      className="w-full h-screen bg-canvas-bg relative overflow-hidden"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div
         className="absolute inset-0"
         style={{
