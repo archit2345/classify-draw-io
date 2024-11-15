@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Square, SquareDashed, Link } from "lucide-react";
+import { Square, SquareDashed, Link2 } from "lucide-react";
 import { useDiagramStore } from "@/store/diagramStore";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -52,33 +52,32 @@ export const Toolbar = () => {
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg p-2 flex gap-2 z-10">
       <Button
-        variant="outline"
-        size="icon"
+        variant="secondary"
         onClick={handleAddClass}
-        className="hover:bg-slate-100"
+        className="flex items-center gap-2"
       >
         <Square className="h-4 w-4" />
+        Add Class
       </Button>
       <Button
-        variant="outline"
-        size="icon"
+        variant="secondary"
         onClick={handleAddInterface}
-        className="hover:bg-slate-100"
+        className="flex items-center gap-2"
       >
         <SquareDashed className="h-4 w-4" />
+        Add Interface
       </Button>
-      <div className="w-px bg-slate-200" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="outline"
-            size="icon"
+            variant="secondary"
             className={cn(
-              "hover:bg-slate-100",
-              connectionMode && "bg-slate-100"
+              "flex items-center gap-2",
+              connectionMode && "bg-slate-200"
             )}
           >
-            <Link className="h-4 w-4" />
+            <Link2 className="h-4 w-4" />
+            Connection Mode
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
