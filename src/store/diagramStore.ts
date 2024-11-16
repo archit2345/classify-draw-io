@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { DiagramState, Diagram } from "@/types/diagram";
+import { DiagramState, Diagram, DiagramElement, Relationship } from "@/types/diagram";
 import { nanoid } from "nanoid";
 import { persist } from "zustand/middleware";
 
@@ -48,21 +48,20 @@ export const useDiagramStore = create<DiagramStore>()(
         set({ activeDiagramId: id, selectedElementId: null, selectedRelationshipId: null }),
 
       addElement: (element) =>
-        set((state) => {
-          const updatedDiagrams = state.diagrams.map((diagram) =>
+        set((state) => ({
+          diagrams: state.diagrams.map((diagram) =>
             diagram.id === state.activeDiagramId
               ? {
                   ...diagram,
                   elements: [...diagram.elements, { ...element, id: nanoid() }],
                 }
               : diagram
-          );
-          return { diagrams: updatedDiagrams };
-        }),
+          ),
+        })),
 
       updateElement: (id, updates) =>
-        set((state) => {
-          const updatedDiagrams = state.diagrams.map((diagram) =>
+        set((state) => ({
+          diagrams: state.diagrams.map((diagram) =>
             diagram.id === state.activeDiagramId
               ? {
                   ...diagram,
@@ -71,13 +70,12 @@ export const useDiagramStore = create<DiagramStore>()(
                   ),
                 }
               : diagram
-          );
-          return { diagrams: updatedDiagrams };
-        }),
+          ),
+        })),
 
       removeElement: (id) =>
-        set((state) => {
-          const updatedDiagrams = state.diagrams.map((diagram) =>
+        set((state) => ({
+          diagrams: state.diagrams.map((diagram) =>
             diagram.id === state.activeDiagramId
               ? {
                   ...diagram,
@@ -87,13 +85,12 @@ export const useDiagramStore = create<DiagramStore>()(
                   ),
                 }
               : diagram
-          );
-          return { diagrams: updatedDiagrams };
-        }),
+          ),
+        })),
 
       addRelationship: (relationship) =>
-        set((state) => {
-          const updatedDiagrams = state.diagrams.map((diagram) =>
+        set((state) => ({
+          diagrams: state.diagrams.map((diagram) =>
             diagram.id === state.activeDiagramId
               ? {
                   ...diagram,
@@ -103,22 +100,20 @@ export const useDiagramStore = create<DiagramStore>()(
                   ],
                 }
               : diagram
-          );
-          return { diagrams: updatedDiagrams };
-        }),
+          ),
+        })),
 
       removeRelationship: (id) =>
-        set((state) => {
-          const updatedDiagrams = state.diagrams.map((diagram) =>
+        set((state) => ({
+          diagrams: state.diagrams.map((diagram) =>
             diagram.id === state.activeDiagramId
               ? {
                   ...diagram,
                   relationships: diagram.relationships.filter((rel) => rel.id !== id),
                 }
               : diagram
-          );
-          return { diagrams: updatedDiagrams };
-        }),
+          ),
+        })),
 
       setSelectedElement: (id) =>
         set({ selectedElementId: id, selectedRelationshipId: null }),
@@ -131,8 +126,8 @@ export const useDiagramStore = create<DiagramStore>()(
       setTempSourceId: (id) => set({ tempSourceId: id }),
 
       resetConnections: (elementId) =>
-        set((state) => {
-          const updatedDiagrams = state.diagrams.map((diagram) =>
+        set((state) => ({
+          diagrams: state.diagrams.map((diagram) =>
             diagram.id === state.activeDiagramId
               ? {
                   ...diagram,
@@ -141,9 +136,8 @@ export const useDiagramStore = create<DiagramStore>()(
                   ),
                 }
               : diagram
-          );
-          return { diagrams: updatedDiagrams };
-        }),
+          ),
+        })),
     }),
     {
       name: "diagram-storage",

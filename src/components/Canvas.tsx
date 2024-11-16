@@ -3,10 +3,14 @@ import { useDiagramStore } from "@/store/diagramStore";
 import { useEffect } from "react";
 
 export const Canvas = () => {
-  const elements = useDiagramStore((state) => state.elements);
-  const relationships = useDiagramStore((state) => state.relationships);
+  const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
+  const diagrams = useDiagramStore((state) => state.diagrams);
   const connectionMode = useDiagramStore((state) => state.connectionMode);
   const updateElement = useDiagramStore((state) => state.updateElement);
+
+  const activeDiagram = diagrams.find(d => d.id === activeDiagramId);
+  const elements = activeDiagram?.elements || [];
+  const relationships = activeDiagram?.relationships || [];
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
