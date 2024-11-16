@@ -1,31 +1,104 @@
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { Square, SquareDashed, Link2 } from "lucide-react";
+import { useDiagramStore } from "@/store/diagramStore";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Circle } from "lucide-react";
 
 export const Toolbar = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const addElement = useDiagramStore((state) => state.addElement);
+  const setConnectionMode = useDiagramStore((state) => state.setConnectionMode);
+  const connectionMode = useDiagramStore((state) => state.connectionMode);
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to sign out. Please try again.",
-        variant: "destructive",
-      });
-    } else {
-      navigate("/login");
-    }
+  const handleAddClass = () => {
+    addElement({
+      type: "class",
+      name: "NewClass",
+      x: 100,
+      y: 100,
+      methods: [],
+      attributes: [],
+    });
+    toast.success("Class added successfully");
   };
 
+  const handleAddInterface = () => {
+    addElement({
+      type: "interface",
+      name: "NewInterface",
+      x: 100,
+      y: 100,
+      methods: [],
+      attributes: [],
+    });
+    toast.success("Interface added successfully");
+  };
+
+  const relationshipTypes = [
+    { type: "association", color: "#3B82F6" }, // blue
+    { type: "inheritance", color: "#10B981" }, // green
+    { type: "composition", color: "#F59E0B" }, // amber
+    { type: "aggregation", color: "#8B5CF6" }, // purple
+    { type: "dependency", color: "#EC4899" },  // pink
+    { type: "realisation", color: "#6366F1" }  // indigo
+  ];
+
   return (
-    <div className="fixed top-0 left-0 right-0 h-16 bg-background border-b flex items-center justify-between px-4 z-50">
-      <h1 className="text-xl font-bold">Class Diagram</h1>
-      <Button variant="outline" onClick={handleLogout}>
-        Sign Out
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg p-2 flex gap-2 z-10">
+      <Button
+        variant="secondary"
+        onClick={handleAddClass}
+        className="flex items-center gap-2"
+      >
+        <Square className="h-4 w-4" />
+        Add Class
       </Button>
+      <Button
+        variant="secondary"
+        onClick={handleAddInterface}
+        className="flex items-center gap-2"
+      >
+        <SquareDashed className="h-4 w-4" />
+        Add Interface
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="secondary"
+            className={cn(
+              "flex items-center gap-2",
+              connectionMode && "bg-slate-200"
+            )}
+          >
+            <Link2 className="h-4 w-4" />
+            Connection Mode
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {relationshipTypes.map(({ type, color }) => (
+            <DropdownMenuItem
+              key={type}
+              onClick={() => setConnectionMode(type)}
+              className="flex items-center gap-2"
+            >
+              <Circle className="h-3 w-3" fill={color} stroke="none" />
+              <span className="capitalize">{type}</span>
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuItem
+            onClick={() => setConnectionMode(null)}
+            className="border-t"
+          >
+            Exit Connection Mode
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };
