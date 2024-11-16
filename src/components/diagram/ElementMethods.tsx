@@ -7,6 +7,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   element: DiagramElement;
@@ -15,19 +22,20 @@ interface Props {
 
 export const ElementMethods = ({ element, isInterface = false }: Props) => {
   const [newMethod, setNewMethod] = useState("");
+  const [selectedVisibility, setSelectedVisibility] = useState<string>("public");
   const updateElement = useDiagramStore((state) => state.updateElement);
 
   const handleAddMethod = () => {
     if (!newMethod) return;
-    const [visibility, name, returnType] = newMethod.split(" ");
-    if (!visibility || !name || !returnType) {
-      toast.error("Format: visibility name returnType (e.g., + getName string)");
+    const [name, returnType] = newMethod.split(" ");
+    if (!name || !returnType) {
+      toast.error("Format: name returnType (e.g., getName string)");
       return;
     }
 
     const method = {
       id: nanoid(),
-      visibility: visibility === "+" ? "public" : visibility === "-" ? "private" : "protected",
+      visibility: selectedVisibility as "public" | "private" | "protected" | "static",
       name,
       returnType,
       parameters: "",
@@ -41,11 +49,36 @@ export const ElementMethods = ({ element, isInterface = false }: Props) => {
     toast.success("Method added successfully");
   };
 
+  const getVisibilitySymbol = (visibility: string) => {
+    switch (visibility) {
+      case "public": return "+";
+      case "private": return "-";
+      case "protected": return "#";
+      case "static": return "*";
+      default: return "+";
+    }
+  };
+
   return (
     <div className="p-2">
+      <div className="px-2 py-1 bg-slate-100 font-medium text-sm mb-2">Methods</div>
       <div className="flex items-center gap-2 mb-2">
+        <Select
+          value={selectedVisibility}
+          onValueChange={setSelectedVisibility}
+        >
+          <SelectTrigger className="w-[110px]">
+            <SelectValue placeholder="Visibility" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="public">Public</SelectItem>
+            <SelectItem value="private">Private</SelectItem>
+            <SelectItem value="protected">Protected</SelectItem>
+            <SelectItem value="static">Static</SelectItem>
+          </SelectContent>
+        </Select>
         <Input
-          placeholder={isInterface ? "+ methodName returnType" : "+ methodName returnType"}
+          placeholder={isInterface ? "methodName returnType" : "methodName returnType"}
           value={newMethod}
           onChange={(e) => setNewMethod(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAddMethod()}
@@ -67,9 +100,7 @@ export const ElementMethods = ({ element, isInterface = false }: Props) => {
             (method.isAbstract || isInterface) && "italic"
           )}
         >
-          {method.visibility === "private" && "-"}
-          {method.visibility === "public" && "+"}
-          {method.visibility === "protected" && "#"}
+          {getVisibilitySymbol(method.visibility)}
           {method.name}({method.parameters}): {method.returnType}
         </div>
       ))}

@@ -1,4 +1,4 @@
-export type Visibility = "public" | "private" | "protected";
+export type Visibility = "public" | "private" | "protected" | "static";
 
 export interface Method {
   id: string;
