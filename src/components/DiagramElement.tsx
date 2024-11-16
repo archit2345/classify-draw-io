@@ -34,10 +34,12 @@ export const DiagramElement = ({ element }: Props) => {
       onDragStart={handleDragStart}
     >
       <ElementHeader element={element} />
-      {element.type === "class" && (
+      {element.type === "interface" ? (
+        <ElementMethods element={element} isInterface={true} />
+      ) : (
         <>
           <ElementAttributes element={element} />
-          <ElementMethods element={element} />
+          <ElementMethods element={element} isInterface={false} />
         </>
       )}
     </div>

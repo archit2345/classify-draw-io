@@ -18,14 +18,10 @@ export const Canvas = () => {
     const element = elements.find(el => el.id === elementId);
     
     if (element) {
-      // Get the canvas bounds
       const canvasRect = e.currentTarget.getBoundingClientRect();
+      const newX = e.clientX - canvasRect.left - 128;
+      const newY = e.clientY - canvasRect.top - 50;
       
-      // Calculate new position relative to canvas
-      const newX = e.clientX - canvasRect.left - 128; // Half of element width
-      const newY = e.clientY - canvasRect.top - 50;   // Approximate half of element height
-      
-      // Update element position
       updateElement(elementId, {
         x: Math.max(0, newX),
         y: Math.max(0, newY)
@@ -33,7 +29,42 @@ export const Canvas = () => {
     }
   };
 
-  // Draw relationships using SVG
+  const calculateIntersectionPoint = (
+    sourceX: number,
+    sourceY: number,
+    targetX: number,
+    targetY: number,
+    elementWidth: number,
+    elementHeight: number
+  ) => {
+    const dx = targetX - sourceX;
+    const dy = targetY - sourceY;
+    const angle = Math.atan2(dy, dx);
+
+    // Calculate intersection points with element borders
+    const halfWidth = elementWidth / 2;
+    const halfHeight = elementHeight / 2;
+
+    // Check which border the line intersects with
+    const tanAngle = Math.abs(Math.tan(angle));
+    let x, y;
+
+    if (tanAngle < halfHeight / halfWidth) {
+      // Intersects with left/right border
+      x = dx > 0 ? -halfWidth : halfWidth;
+      y = x * Math.tan(angle);
+    } else {
+      // Intersects with top/bottom border
+      y = dy > 0 ? -halfHeight : halfHeight;
+      x = y / Math.tan(angle);
+    }
+
+    return {
+      x: targetX + x,
+      y: targetY + y
+    };
+  };
+
   const renderRelationships = () => {
     return relationships.map((rel) => {
       const source = elements.find((el) => el.id === rel.sourceId);
@@ -41,20 +72,42 @@ export const Canvas = () => {
       
       if (!source || !target) return null;
 
-      // Calculate center points
-      const sourceX = source.x + 128; // half of w-64
-      const sourceY = source.y + 50;  // approximate half height
-      const targetX = target.x + 128;
-      const targetY = target.y + 50;
+      const sourceCenter = {
+        x: source.x + 128,
+        y: source.y + 50
+      };
 
-      // Get color based on relationship type
+      const targetCenter = {
+        x: target.x + 128,
+        y: target.y + 50
+      };
+
+      // Calculate intersection points
+      const sourceIntersection = calculateIntersectionPoint(
+        targetCenter.x,
+        targetCenter.y,
+        sourceCenter.x,
+        sourceCenter.y,
+        256, // element width
+        100  // approximate element height
+      );
+
+      const targetIntersection = calculateIntersectionPoint(
+        sourceCenter.x,
+        sourceCenter.y,
+        targetCenter.x,
+        targetCenter.y,
+        256,
+        100
+      );
+
       const colors = {
-        association: "#3B82F6", // blue
-        inheritance: "#10B981", // green
-        composition: "#F59E0B", // amber
-        aggregation: "#8B5CF6", // purple
-        dependency: "#EC4899",  // pink
-        realisation: "#6366F1"  // indigo
+        association: "#3B82F6",
+        inheritance: "#10B981",
+        composition: "#F59E0B",
+        aggregation: "#8B5CF6",
+        dependency: "#EC4899",
+        realisation: "#6366F1"
       };
 
       return (
@@ -86,10 +139,10 @@ export const Canvas = () => {
             </marker>
           </defs>
           <line
-            x1={sourceX}
-            y1={sourceY}
-            x2={targetX}
-            y2={targetY}
+            x1={sourceIntersection.x}
+            y1={sourceIntersection.y}
+            x2={targetIntersection.x}
+            y2={targetIntersection.y}
             stroke={colors[rel.type as keyof typeof colors]}
             strokeWidth="2"
             markerEnd={`url(#arrowhead-${rel.type})`}
