@@ -33,16 +33,9 @@ export interface Relationship {
   targetId: string;
 }
 
-export interface Diagram {
-  id: string;
-  name: string;
+export interface DiagramState {
   elements: DiagramElement[];
   relationships: Relationship[];
-}
-
-export interface DiagramState {
-  diagrams: Diagram[];
-  activeDiagramId: string | null;
   selectedElementId: string | null;
   selectedRelationshipId: string | null;
   connectionMode: string | null;

@@ -1,18 +1,8 @@
 import { create } from "zustand";
-import { DiagramState, Diagram, DiagramElement, Relationship } from "@/types/diagram";
+import { DiagramState, DiagramElement, Relationship } from "@/types/diagram";
 import { nanoid } from "nanoid";
-import { persist } from "zustand/middleware";
-
-const createNewDiagram = (): Diagram => ({
-  id: nanoid(),
-  name: `Diagram ${new Date().toLocaleString()}`,
-  elements: [],
-  relationships: [],
-});
 
 interface DiagramStore extends DiagramState {
-  createDiagram: () => void;
-  setActiveDiagram: (id: string) => void;
   addElement: (element: Omit<DiagramElement, "id">) => void;
   updateElement: (id: string, updates: Partial<DiagramElement>) => void;
   removeElement: (id: string) => void;
@@ -25,122 +15,60 @@ interface DiagramStore extends DiagramState {
   resetConnections: (elementId: string) => void;
 }
 
-export const useDiagramStore = create<DiagramStore>()(
-  persist(
-    (set) => ({
-      diagrams: [createNewDiagram()],
-      activeDiagramId: null,
-      selectedElementId: null,
-      selectedRelationshipId: null,
-      connectionMode: null,
-      tempSourceId: null,
+export const useDiagramStore = create<DiagramStore>((set) => ({
+  elements: [],
+  relationships: [],
+  selectedElementId: null,
+  selectedRelationshipId: null,
+  connectionMode: null,
+  tempSourceId: null,
 
-      createDiagram: () =>
-        set((state) => {
-          const newDiagram = createNewDiagram();
-          return {
-            diagrams: [...state.diagrams, newDiagram],
-            activeDiagramId: newDiagram.id,
-          };
-        }),
+  addElement: (element) =>
+    set((state) => ({
+      elements: [...state.elements, { ...element, id: nanoid() }],
+    })),
 
-      setActiveDiagram: (id) =>
-        set({ activeDiagramId: id, selectedElementId: null, selectedRelationshipId: null }),
+  updateElement: (id, updates) =>
+    set((state) => ({
+      elements: state.elements.map((el) =>
+        el.id === id ? { ...el, ...updates } : el
+      ),
+    })),
 
-      addElement: (element) =>
-        set((state) => ({
-          diagrams: state.diagrams.map((diagram) =>
-            diagram.id === state.activeDiagramId
-              ? {
-                  ...diagram,
-                  elements: [...diagram.elements, { ...element, id: nanoid() }],
-                }
-              : diagram
-          ),
-        })),
+  removeElement: (id) =>
+    set((state) => ({
+      elements: state.elements.filter((el) => el.id !== id),
+      relationships: state.relationships.filter(
+        (rel) => rel.sourceId !== id && rel.targetId !== id
+      ),
+    })),
 
-      updateElement: (id, updates) =>
-        set((state) => ({
-          diagrams: state.diagrams.map((diagram) =>
-            diagram.id === state.activeDiagramId
-              ? {
-                  ...diagram,
-                  elements: diagram.elements.map((el) =>
-                    el.id === id ? { ...el, ...updates } : el
-                  ),
-                }
-              : diagram
-          ),
-        })),
+  addRelationship: (relationship) =>
+    set((state) => ({
+      relationships: [...state.relationships, { ...relationship, id: nanoid() }],
+    })),
 
-      removeElement: (id) =>
-        set((state) => ({
-          diagrams: state.diagrams.map((diagram) =>
-            diagram.id === state.activeDiagramId
-              ? {
-                  ...diagram,
-                  elements: diagram.elements.filter((el) => el.id !== id),
-                  relationships: diagram.relationships.filter(
-                    (rel) => rel.sourceId !== id && rel.targetId !== id
-                  ),
-                }
-              : diagram
-          ),
-        })),
+  removeRelationship: (id) =>
+    set((state) => ({
+      relationships: state.relationships.filter((rel) => rel.id !== id),
+    })),
 
-      addRelationship: (relationship) =>
-        set((state) => ({
-          diagrams: state.diagrams.map((diagram) =>
-            diagram.id === state.activeDiagramId
-              ? {
-                  ...diagram,
-                  relationships: [
-                    ...diagram.relationships,
-                    { ...relationship, id: nanoid() },
-                  ],
-                }
-              : diagram
-          ),
-        })),
+  setSelectedElement: (id) =>
+    set({ selectedElementId: id, selectedRelationshipId: null }),
 
-      removeRelationship: (id) =>
-        set((state) => ({
-          diagrams: state.diagrams.map((diagram) =>
-            diagram.id === state.activeDiagramId
-              ? {
-                  ...diagram,
-                  relationships: diagram.relationships.filter((rel) => rel.id !== id),
-                }
-              : diagram
-          ),
-        })),
+  setSelectedRelationship: (id) =>
+    set({ selectedRelationshipId: id, selectedElementId: null }),
 
-      setSelectedElement: (id) =>
-        set({ selectedElementId: id, selectedRelationshipId: null }),
+  setConnectionMode: (mode) =>
+    set({ connectionMode: mode, tempSourceId: null }),
 
-      setSelectedRelationship: (id) =>
-        set({ selectedRelationshipId: id, selectedElementId: null }),
+  setTempSourceId: (id) =>
+    set({ tempSourceId: id }),
 
-      setConnectionMode: (mode) => set({ connectionMode: mode, tempSourceId: null }),
-
-      setTempSourceId: (id) => set({ tempSourceId: id }),
-
-      resetConnections: (elementId) =>
-        set((state) => ({
-          diagrams: state.diagrams.map((diagram) =>
-            diagram.id === state.activeDiagramId
-              ? {
-                  ...diagram,
-                  relationships: diagram.relationships.filter(
-                    (rel) => rel.sourceId !== elementId && rel.targetId !== elementId
-                  ),
-                }
-              : diagram
-          ),
-        })),
-    }),
-    {
-      name: "diagram-storage",
-    }
-  )
-);
+  resetConnections: (elementId) =>
+    set((state) => ({
+      relationships: state.relationships.filter(
+        (rel) => rel.sourceId !== elementId && rel.targetId !== elementId
+      ),
+    })),
+}));
