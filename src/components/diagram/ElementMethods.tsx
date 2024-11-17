@@ -1,109 +1,144 @@
-import { DiagramElement } from "@/types/diagram";
-import { useDiagramStore } from "@/store/diagramStore";
+import { Method } from "@/types/diagram";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Plus } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
-import { nanoid } from "nanoid";
-import { cn } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { v4 as uuidv4 } from "uuid";
+import { useDiagramStore } from "@/store/diagramStore";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 interface Props {
-  element: DiagramElement;
-  isInterface?: boolean;
+  elementId: string;
+  methods: Method[];
 }
 
-export const ElementMethods = ({ element, isInterface = false }: Props) => {
-  const [newMethod, setNewMethod] = useState("");
-  const [selectedVisibility, setSelectedVisibility] = useState<string>("public");
+export const ElementMethods = ({ elementId, methods }: Props) => {
+  const [isAdding, setIsAdding] = useState(false);
+  const [newMethod, setNewMethod] = useState<Partial<Method>>({
+    name: "",
+    visibility: "public",
+    returnType: "void",
+    parameters: "",
+    isAbstract: false,
+  });
+
   const updateElement = useDiagramStore((state) => state.updateElement);
 
   const handleAddMethod = () => {
-    if (!newMethod) return;
-    const [name, returnType] = newMethod.split(" ");
-    if (!name || !returnType) {
-      toast.error("Format: name returnType (e.g., getName string)");
-      return;
-    }
+    if (!newMethod.name) return;
 
-    const method = {
-      id: nanoid(),
-      visibility: selectedVisibility as "public" | "private" | "protected" | "static",
-      name,
-      returnType,
-      parameters: "",
-      isAbstract: isInterface
+    const method: Method = {
+      id: uuidv4(),
+      name: newMethod.name,
+      visibility: newMethod.visibility as "public" | "private" | "protected" | "static",
+      returnType: newMethod.returnType || "void",
+      parameters: newMethod.parameters || "",
+      isAbstract: newMethod.isAbstract || false,
     };
 
-    updateElement(element.id, {
-      methods: [...element.methods, method]
+    updateElement(elementId, {
+      methods: [...methods, method],
     });
-    setNewMethod("");
-    toast.success("Method added successfully");
+
+    setNewMethod({
+      name: "",
+      visibility: "public",
+      returnType: "void",
+      parameters: "",
+      isAbstract: false,
+    });
+    setIsAdding(false);
   };
 
-  const getVisibilitySymbol = (visibility: string) => {
-    switch (visibility) {
-      case "public": return "+";
-      case "private": return "-";
-      case "protected": return "#";
-      case "static": return "*";
-      default: return "+";
-    }
+  const handleRemoveMethod = (methodId: string) => {
+    updateElement(elementId, {
+      methods: methods.filter((m) => m.id !== methodId),
+    });
   };
 
   return (
-    <div className="p-2">
-      <div className="px-2 py-1 bg-slate-100 font-medium text-sm mb-2">Methods</div>
-      <div className="flex items-center gap-2 mb-2">
-        <Select
-          value={selectedVisibility}
-          onValueChange={setSelectedVisibility}
-        >
-          <SelectTrigger className="w-[110px]">
-            <SelectValue placeholder="Visibility" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="public">Public</SelectItem>
-            <SelectItem value="private">Private</SelectItem>
-            <SelectItem value="protected">Protected</SelectItem>
-            <SelectItem value="static">Static</SelectItem>
-          </SelectContent>
-        </Select>
-        <Input
-          placeholder={isInterface ? "methodName returnType" : "methodName returnType"}
-          value={newMethod}
-          onChange={(e) => setNewMethod(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleAddMethod()}
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={handleAddMethod}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+    <div className="p-2 border-t border-slate-200">
+      <div className="text-sm font-medium mb-2">Methods</div>
+      <div className="space-y-2">
+        {methods.map((method) => (
+          <div key={method.id} className="flex items-center gap-2">
+            <div className="flex-1 text-sm">
+              {method.visibility === "private" && "-"}
+              {method.visibility === "protected" && "#"}
+              {method.visibility === "public" && "+"}
+              {method.visibility === "static" && "$"}
+              {method.name}({method.parameters}): {method.returnType}
+              {method.isAbstract && " [abstract]"}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleRemoveMethod(method.id)}
+            >
+              Remove
+            </Button>
+          </div>
+        ))}
       </div>
-      {element.methods.map((method) => (
-        <div
-          key={method.id}
-          className={cn(
-            "text-sm",
-            (method.isAbstract || isInterface) && "italic"
-          )}
-        >
-          {getVisibilitySymbol(method.visibility)}
-          {method.name}({method.parameters}): {method.returnType}
+      {isAdding ? (
+        <div className="space-y-2 mt-2">
+          <div className="flex gap-2">
+            <Select
+              value={newMethod.visibility}
+              onValueChange={(value) =>
+                setNewMethod({ ...newMethod, visibility: value })
+              }
+            >
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="public">Public</SelectItem>
+                <SelectItem value="private">Private</SelectItem>
+                <SelectItem value="protected">Protected</SelectItem>
+                <SelectItem value="static">Static</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="Method name"
+              value={newMethod.name}
+              onChange={(e) =>
+                setNewMethod({ ...newMethod, name: e.target.value })
+              }
+            />
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Return type"
+              value={newMethod.returnType}
+              onChange={(e) =>
+                setNewMethod({ ...newMethod, returnType: e.target.value })
+              }
+            />
+            <Input
+              placeholder="Parameters"
+              value={newMethod.parameters}
+              onChange={(e) =>
+                setNewMethod({ ...newMethod, parameters: e.target.value })
+              }
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleAddMethod}>Add</Button>
+            <Button variant="outline" onClick={() => setIsAdding(false)}>
+              Cancel
+            </Button>
+          </div>
         </div>
-      ))}
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-2"
+          onClick={() => setIsAdding(true)}
+        >
+          Add Method
+        </Button>
+      )}
     </div>
   );
 };

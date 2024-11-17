@@ -29,13 +29,16 @@ export const useDiagramStore = create<DiagramStore>()(
       tempSourceId: null,
 
       createDiagram: (name) =>
-        set((state) => ({
-          diagrams: [
-            ...state.diagrams,
-            { id: uuidv4(), name, elements: [], relationships: [] },
-          ],
-          activeDiagramId: state.diagrams.length === 0 ? uuidv4() : state.activeDiagramId,
-        })),
+        set((state) => {
+          const newId = uuidv4();
+          return {
+            diagrams: [
+              ...state.diagrams,
+              { id: newId, name, elements: [], relationships: [] },
+            ],
+            activeDiagramId: state.diagrams.length === 0 ? newId : state.activeDiagramId,
+          };
+        }),
 
       setActiveDiagram: (id) =>
         set({ activeDiagramId: id, selectedElementId: null, selectedRelationshipId: null }),

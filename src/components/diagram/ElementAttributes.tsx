@@ -1,96 +1,108 @@
-import { DiagramElement } from "@/types/diagram";
-import { useDiagramStore } from "@/store/diagramStore";
+import { Attribute } from "@/types/diagram";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Plus } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
-import { nanoid } from "nanoid";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { v4 as uuidv4 } from "uuid";
+import { useDiagramStore } from "@/store/diagramStore";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 interface Props {
-  element: DiagramElement;
+  elementId: string;
+  attributes: Attribute[];
 }
 
-export const ElementAttributes = ({ element }: Props) => {
-  const [newAttribute, setNewAttribute] = useState("");
-  const [selectedVisibility, setSelectedVisibility] = useState<string>("public");
+export const ElementAttributes = ({ elementId, attributes }: Props) => {
+  const [newAttribute, setNewAttribute] = useState<Partial<Attribute>>({
+    name: "",
+    type: "",
+    visibility: "public"
+  });
+
   const updateElement = useDiagramStore((state) => state.updateElement);
 
   const handleAddAttribute = () => {
-    if (!newAttribute) return;
-    const [name, type] = newAttribute.split(" ");
-    if (!name || !type) {
-      toast.error("Format: name type (e.g., name string)");
-      return;
-    }
-    updateElement(element.id, {
-      attributes: [...element.attributes, { 
-        id: nanoid(), 
-        visibility: selectedVisibility as "public" | "private" | "protected" | "static",
-        name, 
-        type 
-      }]
+    if (!newAttribute.name || !newAttribute.type) return;
+
+    const attribute: Attribute = {
+      id: uuidv4(),
+      name: newAttribute.name,
+      type: newAttribute.type,
+      visibility: newAttribute.visibility as "public" | "private" | "protected" | "static"
+    };
+
+    updateElement(elementId, {
+      attributes: [...attributes, attribute]
     });
-    setNewAttribute("");
+
+    setNewAttribute({
+      name: "",
+      type: "",
+      visibility: "public"
+    });
   };
 
-  const getVisibilitySymbol = (visibility: string) => {
-    switch (visibility) {
-      case "public": return "+";
-      case "private": return "-";
-      case "protected": return "#";
-      case "static": return "*";
-      default: return "+";
-    }
+  const handleRemoveAttribute = (id: string) => {
+    updateElement(elementId, {
+      attributes: attributes.filter(attr => attr.id !== id)
+    });
+  };
+
+  const visibilitySymbols = {
+    public: "+",
+    private: "-",
+    protected: "#",
+    static: "$"
   };
 
   return (
-    <div className="border-b border-slate-200">
-      <div className="px-2 py-1 bg-slate-100 font-medium text-sm">Attributes</div>
-      <div className="p-2">
-        <div className="flex items-center gap-2 mb-2">
-          <Select
-            value={selectedVisibility}
-            onValueChange={setSelectedVisibility}
-          >
-            <SelectTrigger className="w-[110px]">
-              <SelectValue placeholder="Visibility" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="public">Public</SelectItem>
-              <SelectItem value="private">Private</SelectItem>
-              <SelectItem value="protected">Protected</SelectItem>
-              <SelectItem value="static">Static</SelectItem>
-            </SelectContent>
-          </Select>
-          <Input
-            placeholder="attributeName type"
-            value={newAttribute}
-            onChange={(e) => setNewAttribute(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAddAttribute()}
-          />
+    <div className="p-2 space-y-2">
+      <div className="text-sm font-medium">Attributes</div>
+      {attributes.map((attr) => (
+        <div key={attr.id} className="flex items-center gap-2">
+          <div className="flex-1 text-sm">
+            {visibilitySymbols[attr.visibility]} {attr.name}: {attr.type}
+          </div>
           <Button
             variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={handleAddAttribute}
+            size="sm"
+            onClick={() => handleRemoveAttribute(attr.id)}
           >
-            <Plus className="h-4 w-4" />
+            Remove
           </Button>
         </div>
-        {element.attributes.map((attr) => (
-          <div key={attr.id} className="text-sm">
-            {getVisibilitySymbol(attr.visibility)}
-            {attr.name}: {attr.type}
-          </div>
-        ))}
+      ))}
+      <div className="flex gap-2">
+        <Select
+          value={newAttribute.visibility}
+          onValueChange={(value) =>
+            setNewAttribute({ ...newAttribute, visibility: value })
+          }
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue placeholder="Visibility" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="public">Public</SelectItem>
+            <SelectItem value="private">Private</SelectItem>
+            <SelectItem value="protected">Protected</SelectItem>
+            <SelectItem value="static">Static</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input
+          placeholder="Name"
+          value={newAttribute.name}
+          onChange={(e) =>
+            setNewAttribute({ ...newAttribute, name: e.target.value })
+          }
+        />
+        <Input
+          placeholder="Type"
+          value={newAttribute.type}
+          onChange={(e) =>
+            setNewAttribute({ ...newAttribute, type: e.target.value })
+          }
+        />
+        <Button onClick={handleAddAttribute}>Add</Button>
       </div>
     </div>
   );
