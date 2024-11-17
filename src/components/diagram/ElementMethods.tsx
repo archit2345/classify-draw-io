@@ -1,4 +1,4 @@
-import { Method } from "@/types/diagram";
+import { Method, Visibility } from "@/types/diagram";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { useState } from "react";
@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 interface Props {
   elementId: string;
   methods: Method[];
+  isInterface?: boolean;
 }
 
-export const ElementMethods = ({ elementId, methods }: Props) => {
+export const ElementMethods = ({ elementId, methods = [], isInterface = false }: Props) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newMethod, setNewMethod] = useState<Partial<Method>>({
     name: "",
@@ -29,7 +30,7 @@ export const ElementMethods = ({ elementId, methods }: Props) => {
     const method: Method = {
       id: uuidv4(),
       name: newMethod.name,
-      visibility: newMethod.visibility as "public" | "private" | "protected" | "static",
+      visibility: newMethod.visibility as Visibility,
       returnType: newMethod.returnType || "void",
       parameters: newMethod.parameters || "",
       isAbstract: newMethod.isAbstract || false,
@@ -84,7 +85,7 @@ export const ElementMethods = ({ elementId, methods }: Props) => {
           <div className="flex gap-2">
             <Select
               value={newMethod.visibility}
-              onValueChange={(value) =>
+              onValueChange={(value: Visibility) =>
                 setNewMethod({ ...newMethod, visibility: value })
               }
             >

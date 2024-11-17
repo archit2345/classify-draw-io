@@ -35,11 +35,11 @@ export const DiagramElement = ({ element }: Props) => {
     >
       <ElementHeader element={element} />
       {element.type === "interface" ? (
-        <ElementMethods element={element} isInterface={true} />
+        <ElementMethods elementId={element.id} methods={element.methods} isInterface={true} />
       ) : (
         <>
-          <ElementAttributes element={element} />
-          <ElementMethods element={element} isInterface={false} />
+          <ElementAttributes elementId={element.id} attributes={element.attributes} />
+          <ElementMethods elementId={element.id} methods={element.methods} isInterface={false} />
         </>
       )}
     </div>

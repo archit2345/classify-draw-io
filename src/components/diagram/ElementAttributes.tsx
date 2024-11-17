@@ -1,4 +1,4 @@
-import { Attribute } from "@/types/diagram";
+import { Attribute, Visibility } from "@/types/diagram";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { useState } from "react";
@@ -11,7 +11,7 @@ interface Props {
   attributes: Attribute[];
 }
 
-export const ElementAttributes = ({ elementId, attributes }: Props) => {
+export const ElementAttributes = ({ elementId, attributes = [] }: Props) => {
   const [newAttribute, setNewAttribute] = useState<Partial<Attribute>>({
     name: "",
     type: "",
@@ -27,7 +27,7 @@ export const ElementAttributes = ({ elementId, attributes }: Props) => {
       id: uuidv4(),
       name: newAttribute.name,
       type: newAttribute.type,
-      visibility: newAttribute.visibility as "public" | "private" | "protected" | "static"
+      visibility: newAttribute.visibility as Visibility
     };
 
     updateElement(elementId, {
@@ -74,7 +74,7 @@ export const ElementAttributes = ({ elementId, attributes }: Props) => {
       <div className="flex gap-2">
         <Select
           value={newAttribute.visibility}
-          onValueChange={(value) =>
+          onValueChange={(value: Visibility) =>
             setNewAttribute({ ...newAttribute, visibility: value })
           }
         >
