@@ -17,8 +17,11 @@ const Index = () => {
   return (
     <div className="h-screen w-screen overflow-hidden relative bg-canvas-bg">
       <Toolbar />
-      <DiagramSelector />
-      <Canvas />
+      {/* Add pt-16 to create space below the toolbar */}
+      <div className="pt-16 h-full w-full">
+        <DiagramSelector />
+        <Canvas />
+      </div>
     </div>
   );
 };
