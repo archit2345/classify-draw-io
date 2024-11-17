@@ -2,9 +2,11 @@ import { create } from "zustand";
 import { DiagramState, DiagramElement, Relationship, Diagram } from "@/types/diagram";
 import { nanoid } from "nanoid";
 import { persist } from "zustand/middleware";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface DiagramStore extends DiagramState {
-  createDiagram: (name: string) => void;
+  createDiagram: (name: string) => Promise<void>;
   setActiveDiagram: (id: string) => void;
   addElement: (element: Omit<DiagramElement, "id">) => void;
   updateElement: (id: string, updates: Partial<DiagramElement>) => void;
@@ -16,11 +18,12 @@ interface DiagramStore extends DiagramState {
   setConnectionMode: (mode: string | null) => void;
   setTempSourceId: (id: string | null) => void;
   resetConnections: (elementId: string) => void;
+  loadUserDiagrams: () => Promise<void>;
 }
 
 export const useDiagramStore = create<DiagramStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       diagrams: [],
       activeDiagramId: null,
       selectedElementId: null,
@@ -28,31 +31,89 @@ export const useDiagramStore = create<DiagramStore>()(
       connectionMode: null,
       tempSourceId: null,
 
-      createDiagram: (name) =>
-        set((state) => ({
-          diagrams: [
-            ...state.diagrams,
-            { id: nanoid(), name, elements: [], relationships: [] },
-          ],
-          activeDiagramId: state.diagrams.length === 0 ? nanoid() : state.activeDiagramId,
-        })),
+      loadUserDiagrams: async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
 
-      setActiveDiagram: (id) =>
+          const { data: diagrams, error } = await supabase
+            .from('diagrams')
+            .select('*')
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+          
+          set({ diagrams: diagrams || [] });
+          if (diagrams && diagrams.length > 0 && !get().activeDiagramId) {
+            set({ activeDiagramId: diagrams[0].id });
+          }
+        } catch (error) {
+          console.error('Error loading diagrams:', error);
+          toast.error('Failed to load diagrams');
+        }
+      },
+
+      createDiagram: async (name) => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            toast.error('Please sign in to create diagrams');
+            return;
+          }
+
+          const newDiagram = {
+            id: nanoid(),
+            name,
+            elements: [],
+            relationships: [],
+            user_id: user.id,
+          };
+
+          const { error } = await supabase
+            .from('diagrams')
+            .insert([newDiagram]);
+
+          if (error) throw error;
+
+          set((state) => ({
+            diagrams: [...state.diagrams, newDiagram],
+            activeDiagramId: state.diagrams.length === 0 ? newDiagram.id : state.activeDiagramId,
+          }));
+
+          toast.success('Diagram created successfully');
+        } catch (error) {
+          console.error('Error creating diagram:', error);
+          toast.error('Failed to create diagram');
+        }
+      },
+
+      setActiveDiagram: (id) => 
         set({ activeDiagramId: id, selectedElementId: null, selectedRelationshipId: null }),
 
-      addElement: (element) =>
-        set((state) => {
-          const activeDiagram = state.diagrams.find(d => d.id === state.activeDiagramId);
-          if (!activeDiagram) return state;
+      addElement: async (element) => {
+        const activeDiagram = get().diagrams.find(d => d.id === get().activeDiagramId);
+        if (!activeDiagram) return;
 
-          const updatedDiagrams = state.diagrams.map(diagram =>
-            diagram.id === state.activeDiagramId
-              ? { ...diagram, elements: [...diagram.elements, { ...element, id: nanoid() }] }
-              : diagram
-          );
+        const newElement = { ...element, id: nanoid() };
+        const updatedDiagrams = get().diagrams.map(diagram =>
+          diagram.id === get().activeDiagramId
+            ? { ...diagram, elements: [...diagram.elements, newElement] }
+            : diagram
+        );
 
-          return { diagrams: updatedDiagrams };
-        }),
+        try {
+          const { error } = await supabase
+            .from('diagrams')
+            .update({ elements: [...activeDiagram.elements, newElement] })
+            .eq('id', activeDiagram.id);
+
+          if (error) throw error;
+          set({ diagrams: updatedDiagrams });
+        } catch (error) {
+          console.error('Error adding element:', error);
+          toast.error('Failed to add element');
+        }
+      },
 
       updateElement: (id, updates) =>
         set((state) => {
@@ -142,6 +203,7 @@ export const useDiagramStore = create<DiagramStore>()(
 
           return { diagrams: updatedDiagrams };
         }),
+
     }),
     {
       name: 'diagram-storage',
