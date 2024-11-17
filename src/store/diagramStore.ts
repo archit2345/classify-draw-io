@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { DiagramState, DiagramElement, Relationship, Diagram } from "@/types/diagram";
-import { v4 as uuidv4 } from "uuid";
+import { nanoid } from "nanoid";
 import { persist } from "zustand/middleware";
 
 interface DiagramStore extends DiagramState {
@@ -29,16 +29,13 @@ export const useDiagramStore = create<DiagramStore>()(
       tempSourceId: null,
 
       createDiagram: (name) =>
-        set((state) => {
-          const newId = uuidv4();
-          return {
-            diagrams: [
-              ...state.diagrams,
-              { id: newId, name, elements: [], relationships: [] },
-            ],
-            activeDiagramId: state.diagrams.length === 0 ? newId : state.activeDiagramId,
-          };
-        }),
+        set((state) => ({
+          diagrams: [
+            ...state.diagrams,
+            { id: nanoid(), name, elements: [], relationships: [] },
+          ],
+          activeDiagramId: state.diagrams.length === 0 ? nanoid() : state.activeDiagramId,
+        })),
 
       setActiveDiagram: (id) =>
         set({ activeDiagramId: id, selectedElementId: null, selectedRelationshipId: null }),
@@ -50,7 +47,7 @@ export const useDiagramStore = create<DiagramStore>()(
 
           const updatedDiagrams = state.diagrams.map(diagram =>
             diagram.id === state.activeDiagramId
-              ? { ...diagram, elements: [...diagram.elements, { ...element, id: uuidv4() }] }
+              ? { ...diagram, elements: [...diagram.elements, { ...element, id: nanoid() }] }
               : diagram
           );
 
@@ -96,7 +93,7 @@ export const useDiagramStore = create<DiagramStore>()(
             diagram.id === state.activeDiagramId
               ? {
                   ...diagram,
-                  relationships: [...diagram.relationships, { ...relationship, id: uuidv4() }],
+                  relationships: [...diagram.relationships, { ...relationship, id: nanoid() }],
                 }
               : diagram
           );
