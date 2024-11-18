@@ -3,6 +3,9 @@ import { DiagramState, DiagramElement, Relationship, Diagram } from "@/types/dia
 import { nanoid } from "nanoid";
 import { persist } from "zustand/middleware";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+
+type DbDiagram = Database['public']['Tables']['diagrams']['Row'];
 
 interface DiagramStore extends DiagramState {
   createDiagram: (name: string) => Promise<void>;
@@ -19,6 +22,13 @@ interface DiagramStore extends DiagramState {
   resetConnections: (elementId: string) => void;
   loadUserDiagrams: () => Promise<void>;
 }
+
+const convertDbDiagramToAppDiagram = (dbDiagram: DbDiagram): Diagram => ({
+  id: dbDiagram.id,
+  name: dbDiagram.name,
+  elements: dbDiagram.elements as DiagramElement[],
+  relationships: dbDiagram.relationships as Relationship[],
+});
 
 export const useDiagramStore = create<DiagramStore>()(
   persist(
@@ -44,7 +54,10 @@ export const useDiagramStore = create<DiagramStore>()(
           return;
         }
 
-        set({ diagrams: diagrams || [] });
+        set({ 
+          diagrams: diagrams?.map(convertDbDiagramToAppDiagram) || [],
+          activeDiagramId: diagrams && diagrams.length > 0 ? diagrams[0].id : null 
+        });
       },
 
       createDiagram: async (name) => {
