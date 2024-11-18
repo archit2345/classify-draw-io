@@ -1,6 +1,16 @@
 import { DiagramElement } from "./DiagramElement";
+import { TextBox } from "./canvas/TextBox";
+import { Relationships } from "./canvas/Relationships";
 import { useDiagramStore } from "@/store/diagramStore";
-import { useEffect } from "react";
+import { Button } from "./ui/button";
+import { FileJson } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export const Canvas = () => {
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
@@ -8,8 +18,6 @@ export const Canvas = () => {
   const activeDiagram = diagrams.find(d => d.id === activeDiagramId);
   const elements = activeDiagram?.elements || [];
   const relationships = activeDiagram?.relationships || [];
-  const connectionMode = useDiagramStore((state) => state.connectionMode);
-  const updateElement = useDiagramStore((state) => state.updateElement);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -32,222 +40,6 @@ export const Canvas = () => {
     }
   };
 
-  const calculateIntersectionPoint = (
-    sourceX: number,
-    sourceY: number,
-    targetX: number,
-    targetY: number,
-    elementWidth: number,
-    elementHeight: number
-  ) => {
-    const dx = targetX - sourceX;
-    const dy = targetY - sourceY;
-    const angle = Math.atan2(dy, dx);
-
-    // Calculate intersection points with element borders
-    const halfWidth = elementWidth / 2;
-    const halfHeight = elementHeight / 2;
-
-    // Check which border the line intersects with
-    const tanAngle = Math.abs(Math.tan(angle));
-    let x, y;
-
-    if (tanAngle < halfHeight / halfWidth) {
-      // Intersects with left/right border
-      x = dx > 0 ? -halfWidth : halfWidth;
-      y = x * Math.tan(angle);
-    } else {
-      // Intersects with top/bottom border
-      y = dy > 0 ? -halfHeight : halfHeight;
-      x = y / Math.tan(angle);
-    }
-
-    return {
-      x: targetX + x,
-      y: targetY + y
-    };
-  };
-
-  const renderRelationships = () => {
-    return relationships.map((rel) => {
-      const source = elements.find((el) => el.id === rel.sourceId);
-      const target = elements.find((el) => el.id === rel.targetId);
-      
-      if (!source || !target) return null;
-
-      const sourceCenter = {
-        x: source.x + 128,
-        y: source.y + 50
-      };
-
-      const targetCenter = {
-        x: target.x + 128,
-        y: target.y + 50
-      };
-
-      const sourceIntersection = calculateIntersectionPoint(
-        targetCenter.x,
-        targetCenter.y,
-        sourceCenter.x,
-        sourceCenter.y,
-        256,
-        100
-      );
-
-      const targetIntersection = calculateIntersectionPoint(
-        sourceCenter.x,
-        sourceCenter.y,
-        targetCenter.x,
-        targetCenter.y,
-        256,
-        100
-      );
-
-      const colors = {
-        composition: "#3B82F6",
-        aggregation: "#8B5CF6",
-        association: "#10B981",
-        directedAssociation: "#F59E0B",
-        dependency: "#EC4899",
-        realization: "#6366F1",
-        generalization: "#14B8A6"
-      };
-
-      const getMarkerEnd = (type: string) => {
-        switch (type) {
-          case "composition":
-            return "url(#composition)";
-          case "aggregation":
-            return "url(#aggregation)";
-          case "directedAssociation":
-          case "association":
-            return "url(#arrow)";
-          case "dependency":
-            return "url(#dependency)";
-          case "realization":
-            return "url(#realization)";
-          case "generalization":
-            return "url(#generalization)";
-          default:
-            return "url(#arrow)";
-        }
-      };
-
-      const getStrokeDasharray = (type: string) => {
-        return ["dependency", "realization"].includes(type) ? "5,5" : "none";
-      };
-
-      return (
-        <svg 
-          key={rel.id} 
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none',
-            zIndex: 5
-          }}
-        >
-          <defs>
-            <marker
-              id="arrow"
-              markerWidth="10"
-              markerHeight="7"
-              refX="9"
-              refY="3.5"
-              orient="auto"
-            >
-              <polygon 
-                points="0 0, 10 3.5, 0 7" 
-                fill={colors[rel.type as keyof typeof colors]} 
-              />
-            </marker>
-            <marker
-              id="composition"
-              markerWidth="12"
-              markerHeight="12"
-              refX="6"
-              refY="6"
-              orient="auto"
-            >
-              <polygon 
-                points="0,6 6,0 12,6 6,12"
-                fill={colors[rel.type as keyof typeof colors]}
-              />
-            </marker>
-            <marker
-              id="aggregation"
-              markerWidth="12"
-              markerHeight="12"
-              refX="6"
-              refY="6"
-              orient="auto"
-            >
-              <polygon 
-                points="0,6 6,0 12,6 6,12"
-                fill="white"
-                stroke={colors[rel.type as keyof typeof colors]}
-              />
-            </marker>
-            <marker
-              id="generalization"
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto"
-            >
-              <polygon 
-                points="0,0 10,6 0,12"
-                fill="white"
-                stroke={colors[rel.type as keyof typeof colors]}
-              />
-            </marker>
-            <marker
-              id="realization"
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto"
-            >
-              <polygon 
-                points="0,0 10,6 0,12"
-                fill="white"
-                stroke={colors[rel.type as keyof typeof colors]}
-              />
-            </marker>
-            <marker
-              id="dependency"
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto"
-            >
-              <polygon 
-                points="0,0 10,6 0,12"
-                fill={colors[rel.type as keyof typeof colors]}
-              />
-            </marker>
-          </defs>
-          <line
-            x1={sourceIntersection.x}
-            y1={sourceIntersection.y}
-            x2={targetIntersection.x}
-            y2={targetIntersection.y}
-            stroke={colors[rel.type as keyof typeof colors]}
-            strokeWidth="2"
-            strokeDasharray={getStrokeDasharray(rel.type)}
-            markerEnd={getMarkerEnd(rel.type)}
-          />
-        </svg>
-      );
-    });
-  };
-
   return (
     <div 
       className="w-full h-screen bg-canvas-bg relative overflow-hidden diagram-canvas"
@@ -262,10 +54,34 @@ export const Canvas = () => {
             "linear-gradient(to right, var(--tw-colors-canvas-grid) 1px, transparent 1px), linear-gradient(to bottom, var(--tw-colors-canvas-grid) 1px, transparent 1px)",
         }}
       />
-      {renderRelationships()}
+      <Relationships relationships={relationships} elements={elements} />
       {elements.map((element) => (
-        <DiagramElement key={element.id} element={element} />
+        element.type === "textbox" ? (
+          <TextBox key={element.id} element={element} />
+        ) : (
+          <DiagramElement key={element.id} element={element} />
+        )
       ))}
+      
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="fixed bottom-4 right-4 bg-white shadow-lg"
+          >
+            <FileJson className="h-4 w-4" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Diagram JSON</DialogTitle>
+          </DialogHeader>
+          <pre className="bg-slate-950 text-slate-50 p-4 rounded-lg overflow-auto max-h-[500px]">
+            {JSON.stringify(activeDiagram, null, 2)}
+          </pre>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
