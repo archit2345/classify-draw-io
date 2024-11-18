@@ -2,13 +2,9 @@ import { create } from "zustand";
 import { DiagramState, DiagramElement, Relationship, Diagram } from "@/types/diagram";
 import { nanoid } from "nanoid";
 import { persist } from "zustand/middleware";
-import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
-
-type DbDiagram = Database['public']['Tables']['diagrams']['Row'];
 
 interface DiagramStore extends DiagramState {
-  createDiagram: (name: string) => Promise<void>;
+  createDiagram: (name: string) => void;
   setActiveDiagram: (id: string) => void;
   addElement: (element: Omit<DiagramElement, "id">) => void;
   updateElement: (id: string, updates: Partial<DiagramElement>) => void;
@@ -20,19 +16,11 @@ interface DiagramStore extends DiagramState {
   setConnectionMode: (mode: string | null) => void;
   setTempSourceId: (id: string | null) => void;
   resetConnections: (elementId: string) => void;
-  loadUserDiagrams: () => Promise<void>;
 }
-
-const convertDbDiagramToAppDiagram = (dbDiagram: DbDiagram): Diagram => ({
-  id: dbDiagram.id,
-  name: dbDiagram.name,
-  elements: dbDiagram.elements as DiagramElement[],
-  relationships: dbDiagram.relationships as Relationship[],
-});
 
 export const useDiagramStore = create<DiagramStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       diagrams: [],
       activeDiagramId: null,
       selectedElementId: null,
@@ -40,52 +28,14 @@ export const useDiagramStore = create<DiagramStore>()(
       connectionMode: null,
       tempSourceId: null,
 
-      loadUserDiagrams: async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return;
-
-        const { data: diagrams, error } = await supabase
-          .from('diagrams')
-          .select('*')
-          .eq('user_id', session.user.id);
-
-        if (error) {
-          console.error('Error loading diagrams:', error);
-          return;
-        }
-
-        set({ 
-          diagrams: diagrams?.map(convertDbDiagramToAppDiagram) || [],
-          activeDiagramId: diagrams && diagrams.length > 0 ? diagrams[0].id : null 
-        });
-      },
-
-      createDiagram: async (name) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return;
-
-        const newDiagram = {
-          id: nanoid(),
-          name,
-          elements: [],
-          relationships: [],
-          user_id: session.user.id
-        };
-
-        const { error } = await supabase
-          .from('diagrams')
-          .insert([newDiagram]);
-
-        if (error) {
-          console.error('Error creating diagram:', error);
-          return;
-        }
-
+      createDiagram: (name) =>
         set((state) => ({
-          diagrams: [...state.diagrams, newDiagram],
-          activeDiagramId: state.diagrams.length === 0 ? newDiagram.id : state.activeDiagramId,
-        }));
-      },
+          diagrams: [
+            ...state.diagrams,
+            { id: nanoid(), name, elements: [], relationships: [] },
+          ],
+          activeDiagramId: state.diagrams.length === 0 ? nanoid() : state.activeDiagramId,
+        })),
 
       setActiveDiagram: (id) =>
         set({ activeDiagramId: id, selectedElementId: null, selectedRelationshipId: null }),

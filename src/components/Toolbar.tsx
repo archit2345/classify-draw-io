@@ -8,24 +8,14 @@ export const Toolbar = () => {
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error?.message?.includes('session_not_found')) {
-        // If session is not found, just redirect to login
-        navigate("/login");
-        return;
-      }
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to sign out. Please try again.",
-          variant: "destructive",
-        });
-      } else {
-        navigate("/login");
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    } else {
       navigate("/login");
     }
   };

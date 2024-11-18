@@ -6,11 +6,14 @@ import { useDiagramStore } from "@/store/diagramStore";
 import { useEffect } from "react";
 
 const Index = () => {
-  const loadUserDiagrams = useDiagramStore((state) => state.loadUserDiagrams);
+  const diagrams = useDiagramStore((state) => state.diagrams);
+  const createDiagram = useDiagramStore((state) => state.createDiagram);
 
   useEffect(() => {
-    loadUserDiagrams();
-  }, [loadUserDiagrams]);
+    if (diagrams.length === 0) {
+      createDiagram("Untitled Diagram");
+    }
+  }, [diagrams.length, createDiagram]);
 
   return (
     <div className="h-screen w-screen overflow-hidden relative bg-canvas-bg">
