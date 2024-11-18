@@ -2,9 +2,10 @@ import { create } from "zustand";
 import { DiagramState, DiagramElement, Relationship, Diagram } from "@/types/diagram";
 import { nanoid } from "nanoid";
 import { persist } from "zustand/middleware";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DiagramStore extends DiagramState {
-  createDiagram: (name: string) => void;
+  createDiagram: (name: string) => Promise<void>;
   setActiveDiagram: (id: string) => void;
   addElement: (element: Omit<DiagramElement, "id">) => void;
   updateElement: (id: string, updates: Partial<DiagramElement>) => void;
@@ -16,11 +17,12 @@ interface DiagramStore extends DiagramState {
   setConnectionMode: (mode: string | null) => void;
   setTempSourceId: (id: string | null) => void;
   resetConnections: (elementId: string) => void;
+  loadUserDiagrams: () => Promise<void>;
 }
 
 export const useDiagramStore = create<DiagramStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       diagrams: [],
       activeDiagramId: null,
       selectedElementId: null,
@@ -28,14 +30,49 @@ export const useDiagramStore = create<DiagramStore>()(
       connectionMode: null,
       tempSourceId: null,
 
-      createDiagram: (name) =>
+      loadUserDiagrams: async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const { data: diagrams, error } = await supabase
+          .from('diagrams')
+          .select('*')
+          .eq('user_id', session.user.id);
+
+        if (error) {
+          console.error('Error loading diagrams:', error);
+          return;
+        }
+
+        set({ diagrams: diagrams || [] });
+      },
+
+      createDiagram: async (name) => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const newDiagram = {
+          id: nanoid(),
+          name,
+          elements: [],
+          relationships: [],
+          user_id: session.user.id
+        };
+
+        const { error } = await supabase
+          .from('diagrams')
+          .insert([newDiagram]);
+
+        if (error) {
+          console.error('Error creating diagram:', error);
+          return;
+        }
+
         set((state) => ({
-          diagrams: [
-            ...state.diagrams,
-            { id: nanoid(), name, elements: [], relationships: [] },
-          ],
-          activeDiagramId: state.diagrams.length === 0 ? nanoid() : state.activeDiagramId,
-        })),
+          diagrams: [...state.diagrams, newDiagram],
+          activeDiagramId: state.diagrams.length === 0 ? newDiagram.id : state.activeDiagramId,
+        }));
+      },
 
       setActiveDiagram: (id) =>
         set({ activeDiagramId: id, selectedElementId: null, selectedRelationshipId: null }),

@@ -1,6 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { useDiagramStore } from "@/store/diagramStore";
-import { Square, Boxes, Link2 } from "lucide-react";
+import { Square, Boxes } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Link2 } from "lucide-react";
 
 export const DiagramToolbar = () => {
   const setConnectionMode = useDiagramStore((state) => state.setConnectionMode);
@@ -28,6 +35,15 @@ export const DiagramToolbar = () => {
     });
   };
 
+  const relationshipTypes = [
+    { name: "Association", value: "association" },
+    { name: "Composition", value: "composition" },
+    { name: "Aggregation", value: "aggregation" },
+    { name: "Dependency", value: "dependency" },
+    { name: "Realisation", value: "realisation" },
+    { name: "Inheritance", value: "inheritance" }
+  ];
+
   return (
     <div className="fixed top-20 left-4 bg-white rounded-lg shadow-lg p-2 z-10">
       <div className="flex flex-col gap-2">
@@ -47,14 +63,27 @@ export const DiagramToolbar = () => {
         >
           <Boxes className="h-4 w-4" />
         </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setConnectionMode("inheritance")}
-          title="Add Relationship"
-        >
-          <Link2 className="h-4 w-4" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              title="Add Relationship"
+            >
+              <Link2 className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {relationshipTypes.map((type) => (
+              <DropdownMenuItem
+                key={type.value}
+                onClick={() => setConnectionMode(type.value)}
+              >
+                {type.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
