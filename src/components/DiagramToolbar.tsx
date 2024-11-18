@@ -9,7 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { nanoid } from "nanoid";
 
 export const DiagramToolbar = () => {
   const setConnectionMode = useDiagramStore((state) => state.setConnectionMode);
@@ -39,7 +38,6 @@ export const DiagramToolbar = () => {
 
   const handleAddTextBox = () => {
     addElement({
-      id: nanoid(),
       type: "textbox",
       x: 100,
       y: 100,
