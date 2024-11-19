@@ -5,6 +5,7 @@ import { toast } from "sonner";
 const handleSessionError = async (error: any) => {
   console.error('Session error:', error);
   await supabase.auth.signOut();
+  window.location.href = '/login';
   throw new Error('Authentication failed');
 };
 
@@ -40,7 +41,10 @@ export const fetchDiagrams = async () => {
     .select('*')
     .order('created_at', { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    toast.error('Failed to fetch diagrams');
+    throw error;
+  }
   return data;
 };
 
@@ -52,7 +56,10 @@ export const fetchElementsForDiagram = async (diagramId: string) => {
     .select('*')
     .eq('diagram_id', diagramId);
 
-  if (error) throw error;
+  if (error) {
+    toast.error('Failed to fetch elements');
+    throw error;
+  }
   return data;
 };
 
@@ -64,6 +71,9 @@ export const fetchRelationshipsForDiagram = async (diagramId: string) => {
     .select('*')
     .eq('diagram_id', diagramId);
 
-  if (error) throw error;
+  if (error) {
+    toast.error('Failed to fetch relationships');
+    throw error;
+  }
   return data;
 };
