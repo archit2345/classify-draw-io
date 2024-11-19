@@ -18,13 +18,12 @@ export interface Attribute {
 
 export interface DiagramElement {
   id: string;
-  type: "class" | "interface" | "textbox";
-  name?: string;
+  type: "class" | "interface";
+  name: string;
   x: number;
   y: number;
-  methods?: Method[];
-  attributes?: Attribute[];
-  text?: string;
+  methods: Method[];
+  attributes: Attribute[];
 }
 
 export interface Relationship {
