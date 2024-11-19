@@ -1,15 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database.types'
 
-// Ensure environment variables are properly typed and have fallbacks
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-
-// Validate environment variables
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your .env file.'
-  )
-}
+// Use the project ID from config.toml to construct the URL
+const projectId = 'hokvtvlbssqleollassf'
+const supabaseUrl = `https://${projectId}.supabase.co`
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhva3Z0dmxic3NxbGVvbGxhc3NmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY4OTY1NzgsImV4cCI6MjAyMjQ3MjU3OH0.HYl_Aa_FYm6K_Z5poNQHqnr1Th_qGKM5mbKI_5_RWWQ'
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseKey)
