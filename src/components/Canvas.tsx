@@ -15,6 +15,7 @@ import {
 export const Canvas = () => {
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
   const diagrams = useDiagramStore((state) => state.diagrams);
+  const updateElement = useDiagramStore((state) => state.updateElement);
   const activeDiagram = diagrams.find(d => d.id === activeDiagramId);
   const elements = activeDiagram?.elements || [];
   const relationships = activeDiagram?.relationships || [];
@@ -57,7 +58,12 @@ export const Canvas = () => {
       <Relationships relationships={relationships} elements={elements} />
       {elements.map((element) => (
         element.type === "textbox" ? (
-          <TextBox key={element.id} element={element} />
+          <TextBox key={element.id} element={{
+            id: element.id,
+            x: element.x,
+            y: element.y,
+            text: element.text || ""
+          }} />
         ) : (
           <DiagramElement key={element.id} element={element} />
         )
