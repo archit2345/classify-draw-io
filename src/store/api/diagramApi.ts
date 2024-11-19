@@ -43,7 +43,7 @@ export const fetchDiagrams = async () => {
       .order('created_at', { ascending: true });
 
     if (error) {
-      if (error.status === 401) {
+      if (error.code === '401') {
         await handleSessionError(error);
       }
       toast.error('Failed to fetch diagrams');
@@ -66,7 +66,7 @@ export const fetchElementsForDiagram = async (diagramId: string) => {
       .eq('diagram_id', diagramId);
 
     if (error) {
-      if (error.status === 401) {
+      if (error.code === '401') {
         await handleSessionError(error);
       }
       toast.error('Failed to fetch elements');
@@ -89,7 +89,7 @@ export const fetchRelationshipsForDiagram = async (diagramId: string) => {
       .eq('diagram_id', diagramId);
 
     if (error) {
-      if (error.status === 401) {
+      if (error.code === '401') {
         await handleSessionError(error);
       }
       toast.error('Failed to fetch relationships');
