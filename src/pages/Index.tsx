@@ -8,6 +8,11 @@ import { useEffect } from "react";
 const Index = () => {
   const diagrams = useDiagramStore((state) => state.diagrams);
   const createDiagram = useDiagramStore((state) => state.createDiagram);
+  const loadUserDiagrams = useDiagramStore((state) => state.loadUserDiagrams);
+
+  useEffect(() => {
+    loadUserDiagrams();
+  }, [loadUserDiagrams]);
 
   useEffect(() => {
     if (diagrams.length === 0) {

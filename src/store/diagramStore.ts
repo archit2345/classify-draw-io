@@ -2,25 +2,28 @@ import { create } from "zustand";
 import { DiagramState, DiagramElement, Relationship, Diagram } from "@/types/diagram";
 import { nanoid } from "nanoid";
 import { persist } from "zustand/middleware";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface DiagramStore extends DiagramState {
-  createDiagram: (name: string) => void;
+  createDiagram: (name: string) => Promise<void>;
   setActiveDiagram: (id: string) => void;
-  addElement: (element: Omit<DiagramElement, "id">) => void;
+  addElement: (element: Omit<DiagramElement, "id">) => Promise<void>;
   updateElement: (id: string, updates: Partial<DiagramElement>) => void;
   removeElement: (id: string) => void;
-  addRelationship: (relationship: Omit<Relationship, "id">) => void;
+  addRelationship: (relationship: Omit<Relationship, "id">) => Promise<void>;
   removeRelationship: (id: string) => void;
   setSelectedElement: (id: string | null) => void;
   setSelectedRelationship: (id: string | null) => void;
   setConnectionMode: (mode: string | null) => void;
   setTempSourceId: (id: string | null) => void;
   resetConnections: (elementId: string) => void;
+  loadUserDiagrams: () => Promise<void>;
 }
 
 export const useDiagramStore = create<DiagramStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       diagrams: [],
       activeDiagramId: null,
       selectedElementId: null,
@@ -28,31 +31,130 @@ export const useDiagramStore = create<DiagramStore>()(
       connectionMode: null,
       tempSourceId: null,
 
-      createDiagram: (name) =>
-        set((state) => ({
-          diagrams: [
-            ...state.diagrams,
-            { id: nanoid(), name, elements: [], relationships: [] },
-          ],
-          activeDiagramId: state.diagrams.length === 0 ? nanoid() : state.activeDiagramId,
-        })),
+      loadUserDiagrams: async () => {
+        try {
+          const { data: diagrams, error: diagramsError } = await supabase
+            .from('diagrams')
+            .select('*')
+            .order('created_at', { ascending: true });
 
-      setActiveDiagram: (id) =>
-        set({ activeDiagramId: id, selectedElementId: null, selectedRelationshipId: null }),
+          if (diagramsError) throw diagramsError;
 
-      addElement: (element) =>
-        set((state) => {
-          const activeDiagram = state.diagrams.find(d => d.id === state.activeDiagramId);
-          if (!activeDiagram) return state;
+          const diagramsWithData = await Promise.all(
+            diagrams.map(async (diagram) => {
+              const { data: elements, error: elementsError } = await supabase
+                .from('elements')
+                .select('*')
+                .eq('diagram_id', diagram.id);
 
-          const updatedDiagrams = state.diagrams.map(diagram =>
-            diagram.id === state.activeDiagramId
-              ? { ...diagram, elements: [...diagram.elements, { ...element, id: nanoid() }] }
-              : diagram
+              const { data: relationships, error: relationshipsError } = await supabase
+                .from('relationships')
+                .select('*')
+                .eq('diagram_id', diagram.id);
+
+              if (elementsError) throw elementsError;
+              if (relationshipsError) throw relationshipsError;
+
+              return {
+                ...diagram,
+                elements: elements || [],
+                relationships: relationships || [],
+              };
+            })
           );
 
-          return { diagrams: updatedDiagrams };
-        }),
+          set({ diagrams: diagramsWithData });
+          if (diagramsWithData.length > 0 && !get().activeDiagramId) {
+            set({ activeDiagramId: diagramsWithData[0].id });
+          }
+        } catch (error) {
+          console.error('Error loading diagrams:', error);
+          toast.error('Failed to load diagrams');
+        }
+      },
+
+      createDiagram: async (name) => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('No user found');
+
+          const { data: diagram, error } = await supabase
+            .from('diagrams')
+            .insert({ name, user_id: user.id })
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          set((state) => ({
+            diagrams: [...state.diagrams, { ...diagram, elements: [], relationships: [] }],
+            activeDiagramId: diagram.id,
+          }));
+        } catch (error) {
+          console.error('Error creating diagram:', error);
+          toast.error('Failed to create diagram');
+        }
+      },
+
+      addElement: async (element) => {
+        const activeDiagramId = get().activeDiagramId;
+        if (!activeDiagramId) return;
+
+        try {
+          const { data: newElement, error } = await supabase
+            .from('elements')
+            .insert({
+              diagram_id: activeDiagramId,
+              ...element,
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          set((state) => ({
+            diagrams: state.diagrams.map(diagram =>
+              diagram.id === activeDiagramId
+                ? { ...diagram, elements: [...diagram.elements, newElement] }
+                : diagram
+            ),
+          }));
+        } catch (error) {
+          console.error('Error adding element:', error);
+          toast.error('Failed to add element');
+        }
+      },
+
+      addRelationship: async (relationship) => {
+        const activeDiagramId = get().activeDiagramId;
+        if (!activeDiagramId) return;
+
+        try {
+          const { data: newRelationship, error } = await supabase
+            .from('relationships')
+            .insert({
+              diagram_id: activeDiagramId,
+              source_id: relationship.sourceId,
+              target_id: relationship.targetId,
+              type: relationship.type,
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          set((state) => ({
+            diagrams: state.diagrams.map(diagram =>
+              diagram.id === activeDiagramId
+                ? { ...diagram, relationships: [...diagram.relationships, newRelationship] }
+                : diagram
+            ),
+          }));
+        } catch (error) {
+          console.error('Error adding relationship:', error);
+          toast.error('Failed to add relationship');
+        }
+      },
 
       updateElement: (id, updates) =>
         set((state) => {
@@ -80,20 +182,6 @@ export const useDiagramStore = create<DiagramStore>()(
                   relationships: diagram.relationships.filter(
                     rel => rel.sourceId !== id && rel.targetId !== id
                   ),
-                }
-              : diagram
-          );
-
-          return { diagrams: updatedDiagrams };
-        }),
-
-      addRelationship: (relationship) =>
-        set((state) => {
-          const updatedDiagrams = state.diagrams.map(diagram =>
-            diagram.id === state.activeDiagramId
-              ? {
-                  ...diagram,
-                  relationships: [...diagram.relationships, { ...relationship, id: nanoid() }],
                 }
               : diagram
           );
