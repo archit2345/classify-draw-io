@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useDiagramStore } from "@/store/diagramStore";
-import { Square, Boxes, ArrowRight, Download } from "lucide-react";
+import { Square, Boxes, ArrowRight, Download, Type } from "lucide-react";
 import html2canvas from "html2canvas";
 import {
   DropdownMenu,
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { nanoid } from "nanoid";
 
 export const DiagramToolbar = () => {
   const setConnectionMode = useDiagramStore((state) => state.setConnectionMode);
@@ -33,6 +34,16 @@ export const DiagramToolbar = () => {
       y: 100,
       attributes: [],
       methods: []
+    });
+  };
+
+  const handleAddTextBox = () => {
+    addElement({
+      id: nanoid(),
+      type: "textbox",
+      x: 100,
+      y: 100,
+      text: ""
     });
   };
 
@@ -74,6 +85,14 @@ export const DiagramToolbar = () => {
           title="Add Interface"
         >
           <Boxes className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleAddTextBox}
+          title="Add Text Box"
+        >
+          <Type className="h-4 w-4" />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
