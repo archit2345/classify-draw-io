@@ -1,14 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/types/database.types";
 import { toast } from "sonner";
 
-export const fetchDiagrams = async () => {
-  const { data: session } = await supabase.auth.getSession();
-  if (!session?.session) {
+const refreshSessionIfNeeded = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
     throw new Error('No active session');
   }
 
-  // Check if token is about to expire (within 5 minutes)
-  const expiresAt = session.session.expires_at ? session.session.expires_at * 1000 : 0;
+  const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
   const fiveMinutes = 5 * 60 * 1000;
   
   if (Date.now() + fiveMinutes >= expiresAt) {
@@ -19,6 +19,10 @@ export const fetchDiagrams = async () => {
       throw new Error('Session refresh failed');
     }
   }
+};
+
+export const fetchDiagrams = async () => {
+  await refreshSessionIfNeeded();
 
   const { data: diagrams, error: diagramsError } = await supabase
     .from('diagrams')
@@ -33,6 +37,8 @@ export const fetchDiagrams = async () => {
 };
 
 export const fetchElementsForDiagram = async (diagramId: string) => {
+  await refreshSessionIfNeeded();
+
   const { data: elements, error: elementsError } = await supabase
     .from('elements')
     .select('*')
@@ -46,6 +52,8 @@ export const fetchElementsForDiagram = async (diagramId: string) => {
 };
 
 export const fetchRelationshipsForDiagram = async (diagramId: string) => {
+  await refreshSessionIfNeeded();
+
   const { data: relationships, error: relationshipsError } = await supabase
     .from('relationships')
     .select('*')

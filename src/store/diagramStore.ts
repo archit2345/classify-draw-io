@@ -15,6 +15,8 @@ export const useDiagramStore = create<DiagramState & DiagramActions>()(
       connectionMode: null,
       tempSourceId: null,
 
+      setActiveDiagram: (id) => set({ activeDiagramId: id }),
+
       loadUserDiagrams: async () => {
         try {
           const diagrams = await fetchDiagrams();
