@@ -17,11 +17,5 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
     flowType: 'pkce',
     storage: localStorage,
     storageKey: 'supabase.auth.token',
-  },
-  global: {
-    headers: {
-      'apikey': supabaseKey,
-      'Authorization': `Bearer ${supabaseKey}`
-    }
   }
 })
