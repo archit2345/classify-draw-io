@@ -1,27 +1,11 @@
 import { create } from "zustand";
-import { DiagramState, DiagramElement, Relationship, Diagram } from "@/types/diagram";
-import { nanoid } from "nanoid";
 import { persist } from "zustand/middleware";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DiagramState, DiagramActions } from "./types/diagramStoreTypes";
+import { fetchDiagrams, fetchElementsForDiagram, fetchRelationshipsForDiagram } from "./api/diagramApi";
+import { supabase } from "@/integrations/supabase/client";
 
-interface DiagramStore extends DiagramState {
-  createDiagram: (name: string) => Promise<void>;
-  setActiveDiagram: (id: string) => void;
-  addElement: (element: Omit<DiagramElement, "id">) => Promise<void>;
-  updateElement: (id: string, updates: Partial<DiagramElement>) => void;
-  removeElement: (id: string) => void;
-  addRelationship: (relationship: Omit<Relationship, "id">) => Promise<void>;
-  removeRelationship: (id: string) => void;
-  setSelectedElement: (id: string | null) => void;
-  setSelectedRelationship: (id: string | null) => void;
-  setConnectionMode: (mode: string | null) => void;
-  setTempSourceId: (id: string | null) => void;
-  resetConnections: (elementId: string) => void;
-  loadUserDiagrams: () => Promise<void>;
-}
-
-export const useDiagramStore = create<DiagramStore>()(
+export const useDiagramStore = create<DiagramState & DiagramActions>()(
   persist(
     (set, get) => ({
       diagrams: [],
@@ -33,28 +17,11 @@ export const useDiagramStore = create<DiagramStore>()(
 
       loadUserDiagrams: async () => {
         try {
-          const { data: diagrams, error: diagramsError } = await supabase
-            .from('diagrams')
-            .select('*')
-            .order('created_at', { ascending: true });
-
-          if (diagramsError) throw diagramsError;
-
+          const diagrams = await fetchDiagrams();
           const diagramsWithData = await Promise.all(
             diagrams.map(async (diagram) => {
-              const { data: elements, error: elementsError } = await supabase
-                .from('elements')
-                .select('*')
-                .eq('diagram_id', diagram.id);
-
-              const { data: relationships, error: relationshipsError } = await supabase
-                .from('relationships')
-                .select('*')
-                .eq('diagram_id', diagram.id);
-
-              if (elementsError) throw elementsError;
-              if (relationshipsError) throw relationshipsError;
-
+              const elements = await fetchElementsForDiagram(diagram.id);
+              const relationships = await fetchRelationshipsForDiagram(diagram.id);
               return {
                 ...diagram,
                 elements: elements || [],
@@ -67,8 +34,11 @@ export const useDiagramStore = create<DiagramStore>()(
           if (diagramsWithData.length > 0 && !get().activeDiagramId) {
             set({ activeDiagramId: diagramsWithData[0].id });
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error loading diagrams:', error);
+          if (error.message === 'No active session' || error.message === 'Session refresh failed') {
+            await supabase.auth.signOut();
+          }
           toast.error('Failed to load diagrams');
         }
       },
@@ -230,6 +200,7 @@ export const useDiagramStore = create<DiagramStore>()(
 
           return { diagrams: updatedDiagrams };
         }),
+
     }),
     {
       name: 'diagram-storage',
