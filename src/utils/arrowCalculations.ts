@@ -11,38 +11,39 @@ export const calculateIntersectionPoint = (
   elementWidth: number,
   elementHeight: number
 ): Point => {
-  const dx = targetX - sourceX;
-  const dy = targetY - sourceY;
-  const angle = Math.atan2(dy, dx);
+  // Calculate center points
+  const centerX = targetX;
+  const centerY = targetY;
 
-  // Adjust these values to account for the element's actual dimensions
+  // Calculate angle between points
+  const angle = Math.atan2(sourceY - centerY, sourceX - centerX);
+
+  // Calculate the point where the line intersects the rectangle
   const halfWidth = elementWidth / 2;
   const halfHeight = elementHeight / 2;
 
-  // Calculate intersection with element border
-  const slope = Math.abs(dy / dx);
-  const elementSlope = halfHeight / halfWidth;
+  let intersectionX;
+  let intersectionY;
 
-  let x, y;
-  if (slope <= elementSlope) {
-    // Intersects with left/right border
-    x = dx > 0 ? -halfWidth : halfWidth;
-    y = slope * x;
+  // Check vertical edges first
+  const verticalIntersectY = Math.tan(angle) * halfWidth;
+  if (Math.abs(verticalIntersectY) <= halfHeight) {
+    // Intersects with vertical edge
+    intersectionX = Math.sign(sourceX - centerX) * halfWidth;
+    intersectionY = verticalIntersectY;
   } else {
-    // Intersects with top/bottom border
-    y = dy > 0 ? -halfHeight : halfHeight;
-    x = y / slope;
+    // Intersects with horizontal edge
+    intersectionX = (halfHeight / Math.abs(Math.tan(angle))) * Math.sign(sourceX - centerX);
+    intersectionY = Math.sign(sourceY - centerY) * halfHeight;
   }
 
-  // Add offset to ensure arrows start/end exactly at the border
+  // Add small offset to prevent overlap
   const offset = 2;
-  if (dx > 0) x -= offset;
-  else x += offset;
-  if (dy > 0) y -= offset;
-  else y += offset;
+  intersectionX += Math.sign(sourceX - centerX) * offset;
+  intersectionY += Math.sign(sourceY - centerY) * offset;
 
   return {
-    x: targetX + x,
-    y: targetY + y
+    x: centerX + intersectionX,
+    y: centerY + intersectionY
   };
 };
