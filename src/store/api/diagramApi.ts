@@ -34,46 +34,70 @@ const ensureValidSession = async () => {
 };
 
 export const fetchDiagrams = async () => {
-  await ensureValidSession();
-  
-  const { data, error } = await supabase
-    .from('diagrams')
-    .select('*')
-    .order('created_at', { ascending: true });
+  try {
+    await ensureValidSession();
+    
+    const { data, error } = await supabase
+      .from('diagrams')
+      .select('*')
+      .order('created_at', { ascending: true });
 
-  if (error) {
-    toast.error('Failed to fetch diagrams');
+    if (error) {
+      if (error.status === 401) {
+        await handleSessionError(error);
+      }
+      toast.error('Failed to fetch diagrams');
+      throw error;
+    }
+    return data;
+  } catch (error) {
+    console.error('Error fetching diagrams:', error);
     throw error;
   }
-  return data;
 };
 
 export const fetchElementsForDiagram = async (diagramId: string) => {
-  await ensureValidSession();
+  try {
+    await ensureValidSession();
 
-  const { data, error } = await supabase
-    .from('elements')
-    .select('*')
-    .eq('diagram_id', diagramId);
+    const { data, error } = await supabase
+      .from('elements')
+      .select('*')
+      .eq('diagram_id', diagramId);
 
-  if (error) {
-    toast.error('Failed to fetch elements');
+    if (error) {
+      if (error.status === 401) {
+        await handleSessionError(error);
+      }
+      toast.error('Failed to fetch elements');
+      throw error;
+    }
+    return data;
+  } catch (error) {
+    console.error('Error fetching elements:', error);
     throw error;
   }
-  return data;
 };
 
 export const fetchRelationshipsForDiagram = async (diagramId: string) => {
-  await ensureValidSession();
+  try {
+    await ensureValidSession();
 
-  const { data, error } = await supabase
-    .from('relationships')
-    .select('*')
-    .eq('diagram_id', diagramId);
+    const { data, error } = await supabase
+      .from('relationships')
+      .select('*')
+      .eq('diagram_id', diagramId);
 
-  if (error) {
-    toast.error('Failed to fetch relationships');
+    if (error) {
+      if (error.status === 401) {
+        await handleSessionError(error);
+      }
+      toast.error('Failed to fetch relationships');
+      throw error;
+    }
+    return data;
+  } catch (error) {
+    console.error('Error fetching relationships:', error);
     throw error;
   }
-  return data;
 };
