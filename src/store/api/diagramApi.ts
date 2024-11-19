@@ -18,7 +18,7 @@ const ensureValidSession = async () => {
   }
 
   if (session.expires_at) {
-    const expiresAt = session.expires_at * 1000; // Convert to milliseconds
+    const expiresAt = session.expires_at * 1000;
     const fiveMinutesFromNow = Date.now() + 5 * 60 * 1000;
 
     if (expiresAt < fiveMinutesFromNow) {
