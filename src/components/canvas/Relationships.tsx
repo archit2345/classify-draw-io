@@ -15,7 +15,6 @@ export const Relationships = ({ relationships, elements }: RelationshipsProps) =
     
     if (!source || !target) return null;
 
-    // Calculate center points
     const sourceCenter = {
       x: source.x + 128,
       y: source.y + 50
@@ -26,7 +25,6 @@ export const Relationships = ({ relationships, elements }: RelationshipsProps) =
       y: target.y + 50
     };
 
-    // Calculate intersection points with element boundaries
     const sourceIntersection = calculateIntersectionPoint(
       targetCenter.x,
       targetCenter.y,

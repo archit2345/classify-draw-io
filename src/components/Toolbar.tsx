@@ -8,25 +8,14 @@ export const Toolbar = () => {
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        if (error.message.includes('jwt') || error.message.includes('JWT') || error.status === 403) {
-          // If token is expired or invalid, just redirect to login
-          navigate("/login");
-          return;
-        }
-        toast({
-          title: "Error",
-          description: "Failed to sign out. Please try again.",
-          variant: "destructive",
-        });
-      } else {
-        navigate("/login");
-      }
-    } catch (error) {
-      // Handle any unexpected errors
-      console.error("Logout error:", error);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    } else {
       navigate("/login");
     }
   };

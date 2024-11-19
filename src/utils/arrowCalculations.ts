@@ -11,39 +11,38 @@ export const calculateIntersectionPoint = (
   elementWidth: number,
   elementHeight: number
 ): Point => {
-  // Calculate the angle between the points
-  const dx = sourceX - targetX;
-  const dy = sourceY - targetY;
+  const dx = targetX - sourceX;
+  const dy = targetY - sourceY;
   const angle = Math.atan2(dy, dx);
 
-  // Calculate the point where the line intersects the rectangle
+  // Adjust these values to account for the element's actual dimensions
   const halfWidth = elementWidth / 2;
   const halfHeight = elementHeight / 2;
 
-  // Calculate intersection points for both vertical and horizontal edges
-  let intersectionX, intersectionY;
+  // Calculate intersection with element border
+  const slope = Math.abs(dy / dx);
+  const elementSlope = halfHeight / halfWidth;
 
-  // Check if intersection is more likely on vertical or horizontal edges
-  const absSlope = Math.abs(Math.tan(angle));
-  const aspectRatio = halfHeight / halfWidth;
-
-  if (absSlope < aspectRatio) {
-    // Intersects with vertical edge
-    intersectionX = Math.sign(dx) * halfWidth;
-    intersectionY = dy * (intersectionX / dx);
+  let x, y;
+  if (slope <= elementSlope) {
+    // Intersects with left/right border
+    x = dx > 0 ? -halfWidth : halfWidth;
+    y = slope * x;
   } else {
-    // Intersects with horizontal edge
-    intersectionY = Math.sign(dy) * halfHeight;
-    intersectionX = dx * (intersectionY / dy);
+    // Intersects with top/bottom border
+    y = dy > 0 ? -halfHeight : halfHeight;
+    x = y / slope;
   }
 
-  // Add a slightly larger offset to ensure no overlap
-  const offset = 4;
-  const normalizedDx = dx === 0 ? 0 : Math.sign(dx);
-  const normalizedDy = dy === 0 ? 0 : Math.sign(dy);
-  
+  // Add offset to ensure arrows start/end exactly at the border
+  const offset = 2;
+  if (dx > 0) x -= offset;
+  else x += offset;
+  if (dy > 0) y -= offset;
+  else y += offset;
+
   return {
-    x: targetX + intersectionX + (normalizedDx * offset),
-    y: targetY + intersectionY + (normalizedDy * offset)
+    x: targetX + x,
+    y: targetY + y
   };
 };
