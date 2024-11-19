@@ -3,51 +3,31 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          // Clear any invalid session data
-          await supabase.auth.signOut();
-          return;
-        }
+        const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           navigate("/");
         }
       } catch (error) {
         console.error("Error checking session:", error);
-        toast({
-          title: "Authentication Error",
-          description: "Please try signing in again.",
-          variant: "destructive",
-        });
       }
     };
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
         navigate("/");
-      } else if (event === 'TOKEN_REFRESHED' && !session) {
-        // Handle failed token refresh
-        await supabase.auth.signOut();
-        toast({
-          title: "Session Expired",
-          description: "Please sign in again.",
-          variant: "destructive",
-        });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, toast]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
