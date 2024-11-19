@@ -9,7 +9,14 @@ import Login from "./pages/Login";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -21,13 +28,26 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error || !session) {
-          // Clear the session if there's an error or no session
           await supabase.auth.signOut().catch(() => {
             // Ignore signOut errors as we're already handling the session issue
           });
           setIsAuthenticated(false);
           return;
         }
+        
+        // Check if token is about to expire (within 5 minutes)
+        const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+        const fiveMinutes = 5 * 60 * 1000;
+        if (Date.now() + fiveMinutes >= expiresAt) {
+          const { data: { session: refreshedSession }, error: refreshError } = 
+            await supabase.auth.refreshSession();
+          if (refreshError || !refreshedSession) {
+            await supabase.auth.signOut();
+            setIsAuthenticated(false);
+            return;
+          }
+        }
+        
         setIsAuthenticated(true);
       } catch (error) {
         console.error("Auth error:", error);
