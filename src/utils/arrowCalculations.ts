@@ -11,39 +11,39 @@ export const calculateIntersectionPoint = (
   elementWidth: number,
   elementHeight: number
 ): Point => {
-  // Calculate center points
-  const centerX = targetX;
-  const centerY = targetY;
-
-  // Calculate angle between points
-  const angle = Math.atan2(sourceY - centerY, sourceX - centerX);
+  // Calculate the angle between the points
+  const dx = sourceX - targetX;
+  const dy = sourceY - targetY;
+  const angle = Math.atan2(dy, dx);
 
   // Calculate the point where the line intersects the rectangle
   const halfWidth = elementWidth / 2;
   const halfHeight = elementHeight / 2;
 
-  let intersectionX;
-  let intersectionY;
+  // Calculate intersection points for both vertical and horizontal edges
+  let intersectionX, intersectionY;
 
-  // Check vertical edges first
-  const verticalIntersectY = Math.tan(angle) * halfWidth;
-  if (Math.abs(verticalIntersectY) <= halfHeight) {
+  // Check if intersection is more likely on vertical or horizontal edges
+  const absSlope = Math.abs(Math.tan(angle));
+  const aspectRatio = halfHeight / halfWidth;
+
+  if (absSlope < aspectRatio) {
     // Intersects with vertical edge
-    intersectionX = Math.sign(sourceX - centerX) * halfWidth;
-    intersectionY = verticalIntersectY;
+    intersectionX = Math.sign(dx) * halfWidth;
+    intersectionY = dy * (intersectionX / dx);
   } else {
     // Intersects with horizontal edge
-    intersectionX = (halfHeight / Math.abs(Math.tan(angle))) * Math.sign(sourceX - centerX);
-    intersectionY = Math.sign(sourceY - centerY) * halfHeight;
+    intersectionY = Math.sign(dy) * halfHeight;
+    intersectionX = dx * (intersectionY / dy);
   }
 
-  // Add small offset to prevent overlap
-  const offset = 2;
-  intersectionX += Math.sign(sourceX - centerX) * offset;
-  intersectionY += Math.sign(sourceY - centerY) * offset;
-
+  // Add a slightly larger offset to ensure no overlap
+  const offset = 4;
+  const normalizedDx = dx === 0 ? 0 : Math.sign(dx);
+  const normalizedDy = dy === 0 ? 0 : Math.sign(dy);
+  
   return {
-    x: centerX + intersectionX,
-    y: centerY + intersectionY
+    x: targetX + intersectionX + (normalizedDx * offset),
+    y: targetY + intersectionY + (normalizedDy * offset)
   };
 };
