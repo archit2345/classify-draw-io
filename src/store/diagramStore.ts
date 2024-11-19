@@ -33,13 +33,15 @@ export const useDiagramStore = create<DiagramState & DiagramActions>()(
 
           if (error) throw error;
 
-          set((state) => ({
-            diagrams: state.diagrams.map(diagram =>
-              diagram.id === activeDiagramId
-                ? { ...diagram, elements: [...diagram.elements, newElement] }
-                : diagram
-            ),
-          }));
+          if (newElement) {
+            set((state) => ({
+              diagrams: state.diagrams.map(diagram =>
+                diagram.id === activeDiagramId
+                  ? { ...diagram, elements: [...diagram.elements, newElement] }
+                  : diagram
+              ),
+            }));
+          }
         } catch (error) {
           console.error('Error adding element:', error);
           toast.error('Failed to add element');

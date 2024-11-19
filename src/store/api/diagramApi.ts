@@ -2,66 +2,68 @@ import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/types/database.types";
 import { toast } from "sonner";
 
-const refreshSessionIfNeeded = async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    throw new Error('No active session');
+const handleSessionError = async (error: any) => {
+  console.error('Session error:', error);
+  await supabase.auth.signOut();
+  throw new Error('Authentication failed');
+};
+
+const ensureValidSession = async () => {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError || !session) {
+    await handleSessionError(sessionError || new Error('No active session'));
+    return;
   }
 
-  const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
-  const fiveMinutes = 5 * 60 * 1000;
-  
-  if (Date.now() + fiveMinutes >= expiresAt) {
-    const { data: { session: refreshedSession }, error: refreshError } = 
-      await supabase.auth.refreshSession();
-    if (refreshError || !refreshedSession) {
-      await supabase.auth.signOut();
-      throw new Error('Session refresh failed');
+  if (session.expires_at) {
+    const expiresAt = session.expires_at * 1000; // Convert to milliseconds
+    const fiveMinutesFromNow = Date.now() + 5 * 60 * 1000;
+
+    if (expiresAt < fiveMinutesFromNow) {
+      const { data: { session: newSession }, error: refreshError } = 
+        await supabase.auth.refreshSession();
+      
+      if (refreshError || !newSession) {
+        await handleSessionError(refreshError || new Error('Session refresh failed'));
+        return;
+      }
     }
   }
 };
 
 export const fetchDiagrams = async () => {
-  await refreshSessionIfNeeded();
-
-  const { data: diagrams, error: diagramsError } = await supabase
+  await ensureValidSession();
+  
+  const { data, error } = await supabase
     .from('diagrams')
     .select('*')
     .order('created_at', { ascending: true });
 
-  if (diagramsError) {
-    throw diagramsError;
-  }
-
-  return diagrams;
+  if (error) throw error;
+  return data;
 };
 
 export const fetchElementsForDiagram = async (diagramId: string) => {
-  await refreshSessionIfNeeded();
+  await ensureValidSession();
 
-  const { data: elements, error: elementsError } = await supabase
+  const { data, error } = await supabase
     .from('elements')
     .select('*')
     .eq('diagram_id', diagramId);
 
-  if (elementsError) {
-    throw elementsError;
-  }
-
-  return elements;
+  if (error) throw error;
+  return data;
 };
 
 export const fetchRelationshipsForDiagram = async (diagramId: string) => {
-  await refreshSessionIfNeeded();
+  await ensureValidSession();
 
-  const { data: relationships, error: relationshipsError } = await supabase
+  const { data, error } = await supabase
     .from('relationships')
     .select('*')
     .eq('diagram_id', diagramId);
 
-  if (relationshipsError) {
-    throw relationshipsError;
-  }
-
-  return relationships;
+  if (error) throw error;
+  return data;
 };

@@ -27,10 +27,10 @@ export const createDiagramActions = (set: any, get: () => DiagramState) => ({
       }
     } catch (error: any) {
       console.error('Error loading diagrams:', error);
-      if (error.message === 'No active session' || error.message === 'Session refresh failed') {
-        await supabase.auth.signOut();
-      }
       toast.error('Failed to load diagrams');
+      if (error.message === 'Authentication failed') {
+        window.location.href = '/login';
+      }
     }
   },
 
@@ -47,10 +47,12 @@ export const createDiagramActions = (set: any, get: () => DiagramState) => ({
 
       if (error) throw error;
 
-      set((state: DiagramState) => ({
-        diagrams: [...state.diagrams, { ...diagram, elements: [], relationships: [] }],
-        activeDiagramId: diagram.id,
-      }));
+      if (diagram) {
+        set((state: DiagramState) => ({
+          diagrams: [...state.diagrams, { ...diagram, elements: [], relationships: [] }],
+          activeDiagramId: diagram.id,
+        }));
+      }
     } catch (error) {
       console.error('Error creating diagram:', error);
       toast.error('Failed to create diagram');
