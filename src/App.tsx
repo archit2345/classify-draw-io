@@ -20,18 +20,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const checkAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          await supabase.auth.signOut();
+        if (error || !session) {
+          // Clear the session if there's an error or no session
+          await supabase.auth.signOut().catch(() => {
+            // Ignore signOut errors as we're already handling the session issue
+          });
           setIsAuthenticated(false);
           return;
         }
-        setIsAuthenticated(!!session);
+        setIsAuthenticated(true);
       } catch (error) {
         console.error("Auth error:", error);
         setIsAuthenticated(false);
         toast({
-          title: "Authentication Error",
-          description: "Please try signing in again.",
+          title: "Session Expired",
+          description: "Please sign in again.",
           variant: "destructive",
         });
       }
@@ -39,10 +42,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+      if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
         setIsAuthenticated(false);
-      } else {
-        setIsAuthenticated(!!session);
+      } else if (session) {
+        setIsAuthenticated(true);
       }
     });
 
